@@ -1,0 +1,41 @@
+---
+title: "Untitled"
+author: "Kiranmayee Bakshy"
+date: "June 8, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#library(ggplot2)
+#library(reshape2)
+cpc<-read.table("combined_sorted_per_chr", header=F, stringsAsFactors = F)
+names(cpc)<-c("Combined", "Chromosome")
+fpc<-read.table("filtered_sorted_per_chr", header=F, stringsAsFactors = F)
+names(fpc)<-c("Filtered", "Chromosome")
+df<-merge(fpc,cpc, by="Chromosome", sort=F)
+str(df)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+df_=melt(df, id.vars=c("Chromosome")) 
+p<-ggplot(df_, aes(Chromosome, value, fill=variable)) + geom_bar(stat='Identity', position=position_dodge())
+p+ggtitle("No. of SNPs per Chromosome")+ylab("SNPs count")+theme(legend.position="top")+labs(fill="")
+p+ggtitle("No. of SNPs per Chromosome")+ylab("SNPs count")+theme(legend.position="top")+labs(fill="") +theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_x_discrete(limits=df$Chromosome)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

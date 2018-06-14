@@ -1,0 +1,91 @@
+---
+title: "Untitled"
+author: "Kiranmayee Bakshy"
+date: "June 6, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#library("tidyr", "dplyr", "ggplot2", "gridExtra", "data.table")
+
+filtered<-fread("filtered_no_singletons.afreq", header=T, stringsAsFactors = F, select=c("ID", "ALT_FREQS"), key = c("ID"))
+combined<-fread("combined.afreq", header=T, stringsAsFactors = F, select=c("ID", "ALT_FREQS"), key = c("ID"))
+summary(filtered)
+summary(combined)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+
+c<-ggplot(combined, aes(x=ALT_FREQS)) + geom_density(adjust=1)
+
+f<-ggplot(filtered, aes(x=ALT_FREQS)) + stat_bin(binwidth=0.02, col="black", aes(fill=..count..)) + labs(title="Filtered_AF")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="blue", high="yellow")
+
+grid.arrange(arrangeGrob(c, f, ncol = 2), nrow =1)
+
+dev.copy2pdf(file="AAF.pdf", useDingbats=FALSE)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r echo=FALSE}
+filtered_maf<-fread("filtered_no_singletons.frq", header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "MAF"), key = c("SNP"))
+combined_maf<-fread("combined.frq.gz", header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "MAF"), key = c("SNP"))
+
+filtered_imissing<-fread("filtered_no_singletons.imiss", header=T, stringsAsFactors = F, verbose=T, select=c("IID", "F_MISS"), key = c("IID"))
+combined_imissing<-fread("combined.imiss", header=T, stringsAsFactors = F, verbose=T, select=c("IID", "F_MISS"), key = c("IID"))
+
+filtered_lmissing<-fread("filtered_no_singletons.lmiss", header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "F_MISS"), key = c("SNP"))
+combined_lmissing<-fread("combined.lmiss.gz", header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "F_MISS"), key = c("SNP"))
+
+```
+
+
+```{r}
+
+c<-ggplot(combined_maf, aes(MAF)) + stat_bin(binwidth=0.02, col="black", aes(fill=..count..)) + labs(title="Combined_MAF")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="green", high="red")
+
+f<-ggplot(filtered_maf, aes(MAF)) + stat_bin(binwidth=0.02, col="black", aes(fill=..count..)) + labs(title="Filtered_MAF")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="blue", high="yellow")
+
+grid.arrange(arrangeGrob(c, f, ncol = 2), nrow =1)
+
+dev.copy2pdf(file="MAF.pdf", useDingbats=FALSE)
+```
+
+
+```{r}
+
+c<-ggplot(combined_imissing, aes(F_MISS)) + stat_bin(binwidth=0.002, col="black", aes(fill=..count..)) + labs(title="Combined_missing_per_sample")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="green", high="red")
+
+f<-ggplot(filtered_imissing, aes(F_MISS)) + stat_bin(binwidth=0.002, col="black", aes(fill=..count..)) + labs(title="Filtered_missing_per_sample")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="blue", high="yellow")
+
+grid.arrange(arrangeGrob(c, f, ncol = 2), nrow =1)
+
+dev.copy2pdf(file="Fraction_missing_per_sample.pdf", useDingbats=FALSE)
+```
+
+
+```{r}
+
+c<-ggplot(combined_lmissing, aes(F_MISS)) + stat_bin(binwidth=0.02, col="black", aes(fill=..count..)) + labs(title="Combined_missing_per_variant")+theme(plot.title = element_text(hjust = 0.5)) +scale_fill_gradient("Count", low="green", high="red")
+
+f<-ggplot(filtered_lmissing, aes(F_MISS)) + stat_bin(binwidth=0.02, col="black", aes(fill=..count..)) + labs(title="Filtered_missing_per_variant")+theme(plot.title = element_text(hjust = 0.5)) + scale_fill_gradient("Count", low="blue", high="yellow")
+
+grid.arrange(arrangeGrob(c, f, ncol = 2), nrow =1)
+
+dev.copy2pdf(file="MAF.pdf", useDingbats=FALSE)
+```
