@@ -285,6 +285,120 @@ plink2 --bfile combined --cow --nonfounders --freq --out combined
 ```
 **8) All these stats were plotted as densities using a series of Rscripts to compare the combined and filtered datasets**
    
+   ```bash
+Summary of filtered dataset MAF
+> df<-readRDS("filtered_no_singletons/filtered_no_singletons.frq.rds")
+> dim(df)
+[1] 3188219       2
+> summary(df)
+     SNP                 MAF
+ Length:3188219     Min.   :0.00000
+ Class :character   1st Qu.:0.05523
+ Mode  :character   Median :0.18020
+                    Mean   :0.20171
+                    3rd Qu.:0.33430
+                    Max.   :0.50000
+
+
+Summary of combined dataset MAF
+> df<-readRDS("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.frq.rds")
+> dim(df)
+[1] 21422673        2
+> summary(df)
+     SNP                 MAF
+ Length:21422673    Min.   :0.00000
+ Class :character   1st Qu.:0.01453
+ Mode  :character   Median :0.09302
+                    Mean   :0.15108
+                    3rd Qu.:0.26450
+                    Max.   :0.50000
+                    NA's   :69
+
+
+Summary of filtered dataset AAF
+> library(data.table)
+data.table 1.11.4  Latest news: http://r-datatable.com
+> df<-fread("filtered_no_singletons/filtered_no_singletons.afreq", header=T, select=c("ID", "ALT_FREQS"))
+> summary(df)
+      ID              ALT_FREQS
+ Length:3188219     Min.   :0.005814
+ Class :character   1st Qu.:0.061046
+ Mode  :character   Median :0.209302
+                    Mean   :0.279870
+                    3rd Qu.:0.438953
+                    Max.   :1.000000
+
+Summary of combined dataset AAF
+> df<-fread("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.afreq", header=T, select=c("ID", "ALT_FREQS"))
+|--------------------------------------------------|
+|==================================================|
+> dim(df)
+[1] 20915720        2
+> summary(df)
+      ID              ALT_FREQS
+ Length:20915720    Min.   :0.002907
+ Class :character   1st Qu.:0.014535
+ Mode  :character   Median :0.101744
+                    Mean   :0.211334
+                    3rd Qu.:0.334302
+                    Max.   :1.000000
+
+
+
+Summary of filtered dataset fraction missing per variant
+> df<-readRDS("filtered_no_singletons/filtered_no_singletons.lmiss.rds")
+> summary(df)
+     SNP                F_MISS
+ Length:3188219     Min.   :0.000000
+ Class :character   1st Qu.:0.000000
+ Mode  :character   Median :0.000000
+                    Mean   :0.006676
+                    3rd Qu.:0.000000
+                    Max.   :0.994200
+
+Summary of combined dataset fraction missing per variant		    
+> df<-readRDS("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.lmiss.rds")
+> summary(df)
+     SNP                F_MISS
+ Length:21422673    Min.   :0.000000
+ Class :character   1st Qu.:0.000000
+ Mode  :character   Median :0.000000
+                    Mean   :0.008351
+                    3rd Qu.:0.000000
+                    Max.   :1.000000
+
+
+Summary of filtered dataset fraction missing per sample
+> df<-read.delim("filtered_no_singletons/filtered_no_singletons.imiss", header=T, sep="")
+> dim(df)
+[1] 172   6
+> summary(df[,c(2,6)])
+         IID          F_MISS
+ 001HO02706:  1   Min.   :0.002553
+ 001HO05072:  1   1st Qu.:0.006067
+ 001HO06478:  1   Median :0.006611
+ 001HO07714:  1   Mean   :0.006676
+ 001HO08730:  1   3rd Qu.:0.007488
+ 001HO09404:  1   Max.   :0.018650
+ (Other)   :166
+
+Summary of combined dataset fraction missing per sample
+> df<-read.delim("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.imiss", header=T, sep="")
+> dim(df)
+[1] 172   6
+> summary(df[,c(2,6)])
+         IID          F_MISS
+ 001HO02706:  1   Min.   :0.006061
+ 001HO05072:  1   1st Qu.:0.007851
+ 001HO06478:  1   Median :0.008303
+ 001HO07714:  1   Mean   :0.008351
+ 001HO08730:  1   3rd Qu.:0.008765
+ 001HO09404:  1   Max.   :0.019250
+ (Other)   :166
+
+```
+
+
   
 
   
