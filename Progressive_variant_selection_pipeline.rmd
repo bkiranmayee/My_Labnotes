@@ -1,18 +1,19 @@
 # Progressive variant selection process
 ## This documents the pipeline design and how it was done
 
-Steps:
-   1) We want to select variants in the selected haplotype regions: 
-	* These haplotype regions were selected from a different study. 
-	* The CDDR bulls selected by a method called inverse weight selection (IWS) were sequenced at a high coverage. 
-	* The sequences were aligned to ARS.UCD.v.14 using samtools and variants were called by bcftools.
-	* While the alignment to UMD3 and variant calling is under process, the ARS-UCD.v14 vcf files were lifted over to UMD3 to include 	annotations.
-	* The liftover was 90% successful and we proceeded with the progressive variant selection.
-	* Generation of liftover chain files and vcf liftover are described elsewhere (provide links)
-	* The lifted over vcf files were annotated using snpeff
+## Steps:
+ **1) We want to select variants in the selected haplotype regions:** 
+
+* These haplotype regions were selected from a different study. 
+* The CDDR bulls selected by a method called inverse weight selection (IWS) were sequenced at a high coverage. 
+* The sequences were aligned to ARS.UCD.v.14 using samtools and variants were called by bcftools.
+* While the alignment to UMD3 and variant calling is under process, the ARS-UCD.v14 vcf files were lifted over to UMD3 to include 	annotations.
+* The liftover was 90% successful and we proceeded with the progressive variant selection.
+* Generation of liftover chain files and vcf liftover are described elsewhere (provide links)
+* The lifted over vcf files were annotated using snpeff
 	
-   2) The whole combined dataset summary statistics were generated using bcftools to get a feel of the size of the dataset under study.
-   **(file:combined.ann.bgzip.vcf.gz)**
+ **2) The whole combined dataset summary statistics were generated using bcftools to get a feel of the size of the dataset under study.
+   **_(file:combined.ann.bgzip.vcf.gz)_****
  
    **SN**|**id**|**key**|**value**
 :-----:|:-----:|:-----:|:-----:
@@ -33,9 +34,10 @@ TSTV, transitions/transversions:
 :-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:
 TSTV|0|12796527|6114095|2.09|12770940|6059875|2.11
 
-  3) Selected only SNPs from the haplotype regions, this dataset has been named f2 **(file: f2.vc.gz)**
-    The summary stats of this dataset is as follows:
-    SN, Summary numbers:
+**3) Selected only SNPs from the haplotype regions, this dataset has been named f2 **_(file: f2.vc.gz)_****
+
+   The summary stats of this dataset is as follows:
+   SN, Summary numbers:
     
   **SN**|**id**|**key**|**value**
 :-----:|:-----:|:-----:|:-----:
@@ -56,7 +58,7 @@ SN|0|number of multiallelic SNP sites:|0
 TSTV|0|11676717|5479806|2.13|11676717|5479806|2.13
 
 
-  4) The info fields of the vcf files can be extracted by vcfR package. The Rscript extract_vcfinfo.R was used to extract the required info data of a vcf file and save it as a R data object RData
+**4) The info fields of the vcf files can be extracted by vcfR package. The Rscript extract_vcfinfo.R was used to extract the required info data of a vcf file and save it as a R data object RData**
   
   ```bash
 #!/usr/bin/env Rscript
@@ -94,7 +96,7 @@ save(plot_info, file=paste(outname, "RData", sep="."))
 print("saved RData")
 ```
 
-  5) A summary of the RData thus saved can be viewed for both the combined and f2 datasets
+**5) A summary of the RData thus saved can be viewed for both the combined and f2 datasets**
   
   ```bash
   [kiranmayee.bakshy@assembler2 filtration]$ R
@@ -155,8 +157,9 @@ Type 'q()' to quit R.
                      NA's   :4438
 ```
 
-  6) The custom perl script progressiveSelection_KB.pl was used to select variants which are homozygous in selected Holstein bulls in the known haplotype blocks. **(file:filtered_no_singletons.vcf.gz)**
-  The summary stats for this dataset:
+**6) The custom perl script progressiveSelection_KB.pl was used to select variants which are homozygous in selected Holstein bulls in the known haplotype blocks. **_(file:filtered_no_singletons.vcf.gz)_****
+
+   The summary stats for this dataset:
   
   **SN**|**id**|**key**|**value**
 :-----:|:-----:|:-----:|:-----:
@@ -233,7 +236,7 @@ Type 'q()' to quit R.
  Max.   :  6024.51   Max.   :1.0000
                      NA's   :28
 ```
-  7) I used plink to calculated some more statistics such as MAF, AAF, fraction missing per sample, fraction missing per variant, HWE
+**7) I used plink to calculated some more statistics such as MAF, AAF, fraction missing per sample, fraction missing per variant, HWE**
    
    ```bash
    module load plink/1.90b4.4-2017-05-21
@@ -280,7 +283,7 @@ But this doesn't give AAF. So I used plink2 to calculate Alt allele freq.
 module load plink/2.00alM-2017-05-22
 plink2 --bfile combined --cow --nonfounders --freq --out combined
 ```
-  8) All these stats were plotted as densities using a series of Rscripts to compare the combined and filtered datasets
+**8) All these stats were plotted as densities using a series of Rscripts to compare the combined and filtered datasets**
    
   
 
