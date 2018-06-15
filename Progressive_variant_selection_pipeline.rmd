@@ -1,5 +1,5 @@
-# Automation of the progressive variant selection process
-## This documents the pipeline design and how it works
+# Progressive variant selection process
+## This documents the pipeline design and how it was done
 
 Steps:
    1) We want to select variants in the selected haplotype regions: 
