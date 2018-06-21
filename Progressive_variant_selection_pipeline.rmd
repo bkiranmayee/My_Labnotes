@@ -1,0 +1,406 @@
+# Progressive variant selection process
+## This documents the pipeline design and how it was done
+
+## Steps:
+ **1) We want to select variants in the selected haplotype regions:** 
+
+* These haplotype regions were selected from a different study. 
+* The CDDR bulls selected by a method called inverse weight selection (IWS) were sequenced at a high coverage. 
+* The sequences were aligned to ARS.UCD.v.14 using samtools and variants were called by bcftools.
+* While the alignment to UMD3 and variant calling is under process, the ARS-UCD.v14 vcf files were lifted over to UMD3 to include 	annotations.
+* The liftover was 90% successful and we proceeded with the progressive variant selection.
+* Generation of liftover chain files and vcf liftover are described elsewhere (provide links)
+* The lifted over vcf files were annotated using snpeff
+	
+ **2) The whole combined dataset summary statistics were generated using bcftools to get a feel of the size of the dataset under study.
+   **_(file:combined.ann.bgzip.vcf.gz)_****
+ 
+   **SN**|**id**|**key**|**value**
+:-----:|:-----:|:-----:|:-----:
+SN|0|number of samples:|172
+SN|0|number of records:|21422673
+SN|0|number of no-ALTs:|0
+SN|0|number of SNPs:|18830815
+SN|0|number of MNPs:|0
+SN|0|number of indels:|2591858
+SN|0|number of others:|0
+SN|0|number of multiallelic sites:|506953
+SN|0|number of multiallelic SNP sites:|79796
+
+ 
+TSTV, transitions/transversions:
+
+  **TSTV**|**id**|**ts**|**tv**|**ts/tv**|**ts (1st ALT)**|**tv (1st ALT)**|**ts/tv (1st ALT)**
+:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:
+TSTV|0|12796527|6114095|2.09|12770940|6059875|2.11
+
+**3) Selected only SNPs from the haplotype regions, this dataset has been named f2 **_(file: f2.vc.gz)_****
+
+   The summary stats of this dataset is as follows:
+   SN, Summary numbers:
+    
+  **SN**|**id**|**key**|**value**
+:-----:|:-----:|:-----:|:-----:
+SN|0|number of samples:|172
+SN|0|number of records:|17156523
+SN|0|number of no-ALTs:|0
+SN|0|number of SNPs:|17156523
+SN|0|number of MNPs:|0
+SN|0|number of indels:|0
+SN|0|number of others:|0
+SN|0|number of multiallelic sites:|0
+SN|0|number of multiallelic SNP sites:|0
+
+  TSTV, transitions/transversions:
+
+  **TSTV**|**id**|**ts**|**tv**|**ts/tv**|**ts (1st ALT)**|**tv (1st ALT)**|**ts/tv (1st ALT)**
+:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:
+TSTV|0|11676717|5479806|2.13|11676717|5479806|2.13
+
+
+**4) The info fields of the vcf files can be extracted by vcfR package. The Rscript extract_vcfinfo.R was used to extract the required info data of a vcf file and save it as a R data object RData**
+  
+  ```bash
+#!/usr/bin/env Rscript
+#Date:June 1 2018
+#Author:Kiranmayee Bakshy
+
+# A program to extract INFO feilds of a VCF file and save it as a dataframe for plotting
+# The input and output files have to be passed as arguments to this program
+# Input = file.vcf.gz and output = file.vcf.gz.RData
+
+args = commandArgs(trailingOnly=TRUE)
+
+# test if there is at least one argument: if not, return an error
+if (length(args)==0) {
+  stop("At least one argument must be supplied (input file).\n", call.=FALSE)
+} 
+
+#install.packages("vcfR")
+library(vcfR)
+library(tidyr)
+outname=grep("(\\w+)\\.", args[1], perl=T, value=T)
+
+dat<-read.vcfR(file= args[1], cols = c(1:8), convertNA = T, check_keys = T, verbose = T)
+#m<-metaINFO2df(dat,field="INFO")
+infocols<-c("AC","AN","BQB", "DP","HOB","ICB","MQ", "MQ0F", "MQB", "MQSB" ,"RPB", "SGB", "VDB")
+plot_info<-extract_info_tidy(x = dat, info_fields = infocols, info_types = T)
+plot_info$AC=as.numeric(plot_info$AC)
+plot_info$AN=as.numeric(plot_info$AN)
+plot_info$DP=as.numeric(plot_info$DP)
+plot_info$Key=as.numeric(plot_info$Key)
+
+save(plot_info, file=paste(outname, "RData", sep="."))
+#saveRDS(plot_info, file=paste(outname, "rds", sep="."))
+
+print("saved RData")
+```
+
+**5) A summary of the RData thus saved can be viewed for both the combined and f2 datasets**
+  
+  ```bash
+  [kiranmayee.bakshy@assembler2 filtration]$ R
+
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(data.table)
+
+> load("f2.vcf.gz.RData")
+> summary(plot_info)
+        Key                 AC               AN             BQB
+ Min.   :       1   Min.   :  1.00   Min.   :  2.0   Min.   :0.00
+ 1st Qu.: 4289132   1st Qu.:  5.00   1st Qu.:344.0   1st Qu.:0.10
+ Median : 8578262   Median : 33.00   Median :344.0   Median :0.50
+ Mean   : 8578262   Mean   : 71.97   Mean   :342.4   Mean   :0.49
+ 3rd Qu.:12867392   3rd Qu.:112.00   3rd Qu.:344.0   3rd Qu.:0.87
+ Max.   :17156523   Max.   :344.00   Max.   :344.0   Max.   :1.01
+                                                     NA's   :32486
+       DP             HOB              ICB               MQ
+ Min.   :    1   Min.   :0.00     Min.   :0.00     Min.   : 0.0
+ 1st Qu.: 3675   1st Qu.:0.00     1st Qu.:0.00     1st Qu.:59.0
+ Median : 4244   Median :0.01     Median :0.64     Median :59.0
+ Mean   : 4338   Mean   :0.02     Mean   :0.50     Mean   :57.1
+ 3rd Qu.: 4843   3rd Qu.:0.02     3rd Qu.:0.95     3rd Qu.:59.0
+ Max.   :66018   Max.   :0.50     Max.   :1.00     Max.   :60.0
+                 NA's   :101285   NA's   :101285
+      MQ0F                MQB             MQSB             RPB
+ Min.   :0.0000000   Min.   :0.00    Min.   :0.0000   Min.   :0.00
+ 1st Qu.:0.0000000   1st Qu.:0.00    1st Qu.:0.8209   1st Qu.:0.17
+ Median :0.0000000   Median :1.00    Median :0.9972   Median :0.61
+ Mean   :0.0060578   Mean   :0.65    Mean   :0.7985   Mean   :0.54
+ 3rd Qu.:0.0007413   3rd Qu.:1.00    3rd Qu.:0.9996   3rd Qu.:0.90
+ Max.   :0.9767440   Max.   :1.01    Max.   :1.0128   Max.   :1.01
+                     NA's   :32486   NA's   :660      NA's   :32486
+      SGB                 VDB
+ Min.   :-53303.80   Min.   :0.000
+ 1st Qu.:  -184.20   1st Qu.:0.136
+ Median :    49.84   Median :0.402
+ Mean   :  -111.28   Mean   :0.443
+ 3rd Qu.:   224.61   3rd Qu.:0.731
+ Max.   :  7314.28   Max.   :1.000
+                     NA's   :4438
+```
+
+**6) The custom perl script progressiveSelection_KB.pl was used to select variants which are homozygous in selected Holstein bulls in the known haplotype blocks. **_(file:filtered_no_singletons.vcf.gz)_****
+
+   The summary stats for this dataset:
+  
+  **SN**|**id**|**key**|**value**
+:-----:|:-----:|:-----:|:-----:
+SN|0|number of samples:|172
+SN|0|number of records:|3188219
+SN|0|number of no-ALTs:|0
+SN|0|number of SNPs:|3188219
+SN|0|number of MNPs:|0
+SN|0|number of indels:|0
+SN|0|number of others:|0
+SN|0|number of multiallelic sites:|0
+SN|0|number of multiallelic SNP sites:|0
+
+  TSTV, transitions/transversions:
+
+ **# TSTV**|**id**|**ts**|**tv**|**ts/tv**|**ts (1st ALT)**|**tv (1st ALT)**|**ts/tv (1st ALT)**
+:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:
+TSTV|0|2164732|1023487|2.12|2164732|1023487|2.12
+
+```bash
+[kiranmayee.bakshy@assembler2 filtration]$ R
+
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(data.table)
+> load("filtered_no_singletons/filtered_no_singletons.vcf.gz.RData")
+> summary(plot_info)
+      Key                AC               AN             BQB
+ Min.   :      1   Min.   :  2.00   Min.   :  2.0   Min.   :0.000
+ 1st Qu.: 797056   1st Qu.: 21.00   1st Qu.:344.0   1st Qu.:0.049
+ Median :1594110   Median : 72.00   Median :344.0   Median :0.423
+ Mean   :1594110   Mean   : 95.68   Mean   :341.7   Mean   :0.453
+ 3rd Qu.:2391164   3rd Qu.:150.00   3rd Qu.:344.0   3rd Qu.:0.836
+ Max.   :3188219   Max.   :344.00   Max.   :344.0   Max.   :1.000
+                                                    NA's   :4564
+       DP             HOB             ICB              MQ
+ Min.   :    1   Min.   :0.000   Min.   :0.000   Min.   : 0.00
+ 1st Qu.: 3634   1st Qu.:0.003   1st Qu.:0.143   1st Qu.:59.00
+ Median : 4209   Median :0.012   Median :0.784   Median :59.00
+ Mean   : 4338   Mean   :0.027   Mean   :0.605   Mean   :56.81
+ 3rd Qu.: 4848   3rd Qu.:0.031   3rd Qu.:0.957   3rd Qu.:59.00
+ Max.   :60297   Max.   :0.500   Max.   :1.000   Max.   :60.00
+                 NA's   :14132   NA's   :14132
+      MQ0F                MQB             MQSB             RPB
+ Min.   :0.0000000   Min.   :0.000   Min.   :0.0000   Min.   :0.000
+ 1st Qu.:0.0000000   1st Qu.:0.004   1st Qu.:0.8103   1st Qu.:0.152
+ Median :0.0000000   Median :0.997   Median :0.9979   Median :0.605
+ Mean   :0.0072173   Mean   :0.684   Mean   :0.7919   Mean   :0.538
+ 3rd Qu.:0.0007231   3rd Qu.:1.000   3rd Qu.:0.9997   3rd Qu.:0.901
+ Max.   :0.9659090   Max.   :1.000   Max.   :1.0128   Max.   :1.000
+                     NA's   :4564    NA's   :115      NA's   :4564
+      SGB                 VDB
+ Min.   :-44448.10   Min.   :0.0000
+ 1st Qu.:   -76.37   1st Qu.:0.1135
+ Median :   102.19   Median :0.3502
+ Mean   :   -80.74   Mean   :0.3965
+ 3rd Qu.:   250.58   3rd Qu.:0.6361
+ Max.   :  6024.51   Max.   :1.0000
+                     NA's   :28
+```
+**7) I used plink to calculated some more statistics such as MAF, AAF, fraction missing per sample, fraction missing per variant, HWE**
+   
+   ```bash
+   module load plink/1.90b4.4-2017-05-21
+   plink --vcf combined.ann.bgzip.vcf.gz --double-ids --cow --nonfounders --freq --missing --hardy --keep-autoconv --out combined 
+PLINK v1.90b4.4 64-bit (21 May 2017)
+Options in effect:
+  --cow
+  --double-id
+  --freq
+  --hardy
+  --keep-autoconv
+  --missing
+  --out combined
+  --vcf combined.ann.bgzip.vcf.gz
+
+Hostname: assembler2.agil.barc.ba.ars.usda.gov
+Working directory: /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated
+Start time: Wed Jun  6 16:18:21 2018
+
+Random number seed: 1528316301
+515987 MB RAM detected; reserving 257993 MB for main workspace.
+--vcf: combined.bed + combined.bim + combined.fam written.
+21422673 variants loaded from .bim file.
+172 cattle (0 males, 0 females, 172 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to combined.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 172 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.991649.
+--freq: Allele frequencies (founders only) written to combined.frq .
+--missing: Sample missing data report written to combined.imiss, and
+variant-based missing data report written to combined.lmiss.
+--hardy: Writing Hardy-Weinberg report (founders only) to combined.hwe ...
+done.
+21422673 variants and 172 cattle pass filters and QC.
+Note: No phenotypes present.
+
+End time: Wed Jun  6 16:46:16 2018
+```
+
+But this doesn't give AAF. So I used plink2 to calculate Alt allele freq.
+
+```bash
+module load plink/2.00alM-2017-05-22
+plink2 --bfile combined --cow --nonfounders --freq --out combined
+```
+**8) All these stats were plotted as densities using a series of Rscripts to compare the combined and filtered datasets**
+   
+   ```bash
+Summary of filtered dataset MAF
+> df<-readRDS("filtered_no_singletons/filtered_no_singletons.frq.rds")
+> dim(df)
+[1] 3188219       2
+> summary(df)
+     SNP                 MAF
+ Length:3188219     Min.   :0.00000
+ Class :character   1st Qu.:0.05523
+ Mode  :character   Median :0.18020
+                    Mean   :0.20171
+                    3rd Qu.:0.33430
+                    Max.   :0.50000
+
+
+Summary of combined dataset MAF
+> df<-readRDS("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.frq.rds")
+> dim(df)
+[1] 21422673        2
+> summary(df)
+     SNP                 MAF
+ Length:21422673    Min.   :0.00000
+ Class :character   1st Qu.:0.01453
+ Mode  :character   Median :0.09302
+                    Mean   :0.15108
+                    3rd Qu.:0.26450
+                    Max.   :0.50000
+                    NA's   :69
+
+
+Summary of filtered dataset AAF
+> library(data.table)
+data.table 1.11.4  Latest news: http://r-datatable.com
+> df<-fread("filtered_no_singletons/filtered_no_singletons.afreq", header=T, select=c("ID", "ALT_FREQS"))
+> summary(df)
+      ID              ALT_FREQS
+ Length:3188219     Min.   :0.005814
+ Class :character   1st Qu.:0.061046
+ Mode  :character   Median :0.209302
+                    Mean   :0.279870
+                    3rd Qu.:0.438953
+                    Max.   :1.000000
+
+Summary of combined dataset AAF
+> df<-fread("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.afreq", header=T, select=c("ID", "ALT_FREQS"))
+|--------------------------------------------------|
+|==================================================|
+> dim(df)
+[1] 20915720        2
+> summary(df)
+      ID              ALT_FREQS
+ Length:20915720    Min.   :0.002907
+ Class :character   1st Qu.:0.014535
+ Mode  :character   Median :0.101744
+                    Mean   :0.211334
+                    3rd Qu.:0.334302
+                    Max.   :1.000000
+
+
+
+Summary of filtered dataset fraction missing per variant
+> df<-readRDS("filtered_no_singletons/filtered_no_singletons.lmiss.rds")
+> summary(df)
+     SNP                F_MISS
+ Length:3188219     Min.   :0.000000
+ Class :character   1st Qu.:0.000000
+ Mode  :character   Median :0.000000
+                    Mean   :0.006676
+                    3rd Qu.:0.000000
+                    Max.   :0.994200
+
+Summary of combined dataset fraction missing per variant		    
+> df<-readRDS("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.lmiss.rds")
+> summary(df)
+     SNP                F_MISS
+ Length:21422673    Min.   :0.000000
+ Class :character   1st Qu.:0.000000
+ Mode  :character   Median :0.000000
+                    Mean   :0.008351
+                    3rd Qu.:0.000000
+                    Max.   :1.000000
+
+
+Summary of filtered dataset fraction missing per sample
+> df<-read.delim("filtered_no_singletons/filtered_no_singletons.imiss", header=T, sep="")
+> dim(df)
+[1] 172   6
+> summary(df[,c(2,6)])
+         IID          F_MISS
+ 001HO02706:  1   Min.   :0.002553
+ 001HO05072:  1   1st Qu.:0.006067
+ 001HO06478:  1   Median :0.006611
+ 001HO07714:  1   Mean   :0.006676
+ 001HO08730:  1   3rd Qu.:0.007488
+ 001HO09404:  1   Max.   :0.018650
+ (Other)   :166
+
+Summary of combined dataset fraction missing per sample
+> df<-read.delim("/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover/annotated/combined.imiss", header=T, sep="")
+> dim(df)
+[1] 172   6
+> summary(df[,c(2,6)])
+         IID          F_MISS
+ 001HO02706:  1   Min.   :0.006061
+ 001HO05072:  1   1st Qu.:0.007851
+ 001HO06478:  1   Median :0.008303
+ 001HO07714:  1   Mean   :0.008351
+ 001HO08730:  1   3rd Qu.:0.008765
+ 001HO09404:  1   Max.   :0.019250
+ (Other)   :166
+
+```
+
+
+  
+
+  
+
+	
