@@ -2,7 +2,7 @@
 #Date:June 8 2018
 #Author:Kiranmayee Bakshy
 
-# A program to plot histograms of info fields in a VCF file
+# A program to plot densities of fraction missing per variant of 2 datasets
 # The input and output files have to be passed as arguments to this program
 # Input = 2 stat files and output = fileplot.pdf
 
@@ -16,16 +16,20 @@ if (length(args)==0) {
   args[3] = "out.pdf"
 }
 
+#install.packages("vcfR")
 library(ggplot2)
 library(data.table)
 library(reshape2)
 
-filtered<-fread(args[1], header=T, stringsAsFactors = F, select=c("ID", "ALT_FREQS"), key = c("ID"))
-combined<-fread(args[2], header=T, stringsAsFactors = F, select=c("ID", "ALT_FREQS"), key = c("ID"))
+filtered<-read.table(args[1], header=T, stringsAsFactors = F)
+f<-filtered[,c(2,6)]
 
-df<-merge(filtered,combined, by="ID", all.y=T)
-df_<-melt(df, id.vars = "ID")
-p<-ggplot(df_, aes(value, fill=variable)) + geom_density(alpha=0.2)+ggtitle("Alt Allele Frequency")+ylab("Density")+labs(fill="")+scale_fill_discrete(labels=c("Filtered", "Combined"))
+combined<-read.table(args[2], header=T, stringsAsFactors = F)
+c<-combined[,c(2,6)]
+
+df<-merge(f,c, by="IID", all.y=T)
+df_<-melt(df, id.vars = "IID")
+p<-ggplot(df_, aes(value, fill=variable)) + geom_density(alpha=0.2)+ggtitle("Fraction_missing_per_sample")+ylab("Density")+labs(fill="")+scale_fill_discrete(labels=c("Filtered", "Combined"))
 
 pdf(file=args[3], onefile=T) 
 p
