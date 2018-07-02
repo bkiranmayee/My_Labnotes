@@ -114,7 +114,7 @@ while(my $line = <$ifh>){
 			
 						
 		#if($valid && ! $hetall && $an > 337 && $mq0f <= 0.1 && $mqsb >= 0.95 && $dp > $min_dp && $dp < $max_dp){
-		if($valid && ! $hetall && $an > 337 && $dp > $min_dp && $dp < $max_dp){	
+		if($valid && ! $hetall && $mq0f <= 0.1 && $mqsb >= 0.95){	
 			print "$segs[0]\t$segs[1]\tkept\n";
 			$filter1_count++;
 			print {$OUTFILE} join("\t", @segs) . "\n";
@@ -122,11 +122,11 @@ while(my $line = <$ifh>){
 			print "$segs[0]\t$segs[1]\tnotkept\n";
 			$filter2_count++ if (!$valid);
 			$filter4_count++ if ($hetall);
-			$filter5_count++ if ($an < 337);							#AN > 337    (2% reduction from total max AN due to CNV)
-			#$filter6_count++ if ($mq0f >= 0.1);							#MQ0F filter away >= 0.1
-			#$filter7_count++ if ($mqsb <= 0.95);							#MQSB filter away <= 0.95
-			$filter8_count++ if ($dp < $min_dp);
-			$filter9_count++ if ($dp > $max_dp);							#DP filtered on +/- 3 stdevs   (remove repeats, condensed duplications, faulty calls, etc)
+			#$filter5_count++ if ($an < 337);							#AN > 337    (2% reduction from total max AN due to CNV)
+			$filter6_count++ if ($mq0f >= 0.1);							#MQ0F filter away >= 0.1
+			$filter7_count++ if ($mqsb <= 0.95);							#MQSB filter away <= 0.95
+			#$filter8_count++ if ($dp < $min_dp);
+			#$filter9_count++ if ($dp > $max_dp);							#DP filtered on +/- 3 stdevs   (remove repeats, condensed duplications, faulty calls, etc)
 		}	
 	}else{
 		$filter2_count++;
@@ -136,10 +136,10 @@ while(my $line = <$ifh>){
 print "Kept $filter1_count out of " . ($filter1_count + $filter2_count) . " variant sites\n";
 print "Removed $filter3_count singletons\n";
 print "Removed $filter4_count sites that were heterozygous in all other regions\n";
-print "Removed $filter5_count sites with AN < 337\n";
-*print "Removed $filter6_count sites with MQ0F >= 0.1\n";
-*print "Removed $filter7_count sites with MQSB <= 0.95\n";
-print "Removed " . ($filter8_count + $filter9_count) . " sites with " . $min_dp . "> DP >". $max_dp . "\n";
+#print "Removed $filter5_count sites with AN < 337\n";
+print "Removed $filter6_count sites with MQ0F >= 0.1\n";
+print "Removed $filter7_count sites with MQSB <= 0.95\n";
+#print "Removed " . ($filter8_count + $filter9_count) . " sites with " . $min_dp . "> DP >". $max_dp . "\n";
 
 
 close $ifh;

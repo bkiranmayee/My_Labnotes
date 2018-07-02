@@ -1,0 +1,48 @@
+---
+title: "Summary of progressive selection of variants Run4"
+author: "Kiranmayee Bakshy"
+date: "June 22, 2018"
+output: html_document
+---
+
+**A summary of the filtration_run4 is as follows**
+ **Run4 consists of variants with a) homozygous GT in target animals b) no heterozygous genotype found in non-target animals c) all INFO filters other than DP**
+ 
+  * Kept 2093896 out of 14397424 variant sites
+  * Removed 1664776 singletons
+  * Removed 342817 sites that were heterozygous in all other regions
+  * Removed 229484 sites with MQ0F >= 0.1
+  * Removed 4819784 sites with MQSB <= 0.95
+  
+
+ **Summary statistics for INFO fields** 
+  
+```{r echo=FALSE}
+plot_info<-readRDS("filtered_run4/filtered_run4.vcf.gz.rds")
+summary(plot_info)
+```
+
+**Plink summary statistics such as MAF, AAF, fraction missing per sample, fraction missing per variant, HWE**
+   
+```{r echo=FALSE}
+#Summary of filtered dataset MAF
+df<-readRDS("filtered_run4/filtered_run4.frq.rds")
+summary(df)
+
+#Summary of filtered dataset AAF
+library(data.table)
+df<-fread("filtered_run4/filtered_run4.afreq", header=T, select=c("ID", "ALT_FREQS"))
+summary(df)
+```
+
+#Summary of filtered dataset fraction missing per variant
+```{r echo=FALSE}
+df<-readRDS("filtered_run4/filtered_run4.lmiss.rds")
+summary(df)
+```
+
+#Summary of filtered dataset fraction missing per sample
+```{r echo=FALSE}
+df<-read.delim("filtered_run4/filtered_run4.imiss", header=T, sep="")
+summary(df[,c(2,6)])
+```
