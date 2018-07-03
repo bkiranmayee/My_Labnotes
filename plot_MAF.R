@@ -2,7 +2,7 @@
 #Date:June 8 2018
 #Author:Kiranmayee Bakshy
 
-# A program to plot densities of MAF of 2 datasets
+# A program to plot densities of MAF/fraction missing per variant of 2 datasets (designed for plink output files like file.frq and file.lmiss)
 # The input and output files have to be passed as arguments to this program
 # Input = 2 stat files and output = fileplot.pdf
 
@@ -16,18 +16,17 @@ if (length(args)==0) {
   args[3] = "out.pdf"
 }
 
-#install.packages("vcfR")
 library(ggplot2)
-library(data.table)
 library(reshape2)
 
-filtered<-fread(args[1], header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "MAF"), key = c("SNP"))
-combined<-fread(args[2], header=T, stringsAsFactors = F, verbose=T, select=c("SNP", "MAF"), key = c("SNP"))
+combined<-readRDS(args[1])
+filtered<-readRDS(args[2])
 
-df<-merge(filtered,combined, by="SNP", all.y=T)
-df_<-melt(df, id.vars = "SNP")
-p<-ggplot(df_, aes(value, fill=variable)) + geom_density(alpha=0.2)+ggtitle("Minor Allele Frequency")+ylab("Density")+labs(fill="")+scale_fill_discrete(labels=c("Filtered", "Combined"))
+pdf(file=args[3], onefile=T, paper='A4r') 
 
-pdf(file=args[3], onefile=T) 
-p
+plot(density(combined[[2]], na.rm=T), col="blue", border="black", main="Density plot", xlab=names(filtered[2]))
+  lines(density(filtered[[2]], na.rm=T), col="red", border="black")
+  legend("top", c("Combined","Filtered"), lty = c(1,1), col = c("blue","red"))
+
 dev.off()
+

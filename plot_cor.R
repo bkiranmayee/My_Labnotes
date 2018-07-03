@@ -44,13 +44,13 @@ print("now plotting correlations...")
 pdf(file=args[3], onefile=T)  
 
 for (i in 1:length(cols)){
-  c[i]<-ggscatter(combined, x = "BQB", y = cols[i],
-               add = "reg.line", conf.int = TRUE,
+  c[i]<-ggscatter(combined, x = "BQB", y = names(combined[i]),
+               add = "reg.line", conf.int = TRUE, shape=1, size=0.1,
                cor.coef = TRUE, cor.method = "pearson", main="Combined",
                xlab = "BQB", ylab = cols[i])
   
-  f[i]<-ggscatter(filtered, x = "BQB", y = cols[i],
-               add = "reg.line", conf.int = TRUE,
+  f[i]<-ggscatter(filtered, x = "BQB", y = names(filtered[i]),
+               add = "reg.line", conf.int = TRUE, shape=1, size=0.1, 
                cor.coef = TRUE, cor.method = "pearson", main="Filtered",
                xlab = "BQB", ylab = cols[i])
   

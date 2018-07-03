@@ -34,10 +34,10 @@ print("now plotting correlations...")
 
 pdf(file=args[2], onefile=T)  
 
-bqb<-ggqqplot(plot_info$BQB, ylab = "BQB")
-mqb<-ggqqplot(plot_info$MQB, ylab = "MQB")
-mqsb<-ggqqplot(plot_info$MQSB, ylab = "MQSB")
-rpb<-ggqqplot(plot_info$RPB, ylab = "RPB")
+bqb<-ggqqplot(plot_info$BQB, size=0.1, alpha=0.01, ylab = "BQB")
+mqb<-ggqqplot(plot_info$MQB, size=0.1, alpha=0.01, ylab = "MQB")
+mqsb<-ggqqplot(plot_info$MQSB, size=0.1, alpha=0.01, ylab = "MQSB")
+rpb<-ggqqplot(plot_info$RPB, size=0.1, alpha=0.01, ylab = "RPB")
   
 grid.arrange(arrangeGrob(bqb,mqb,mqsb,rpb, ncol = 2), nrow = 2)
 

@@ -42,36 +42,31 @@ flattenCorrMatrix <- function(cormat, pmat) {
 load(args[1])
 combined<-plot_info
 rm(plot_info)
-
-com<-rcorr(as.matrix(combined[,c(4,10:12,14)]),type="pearson")
+com<-rcorr(as.matrix(combined[,c(2:14)]),type="pearson")
 com_flat<-flattenCorrMatrix(com$r, com$P)
 
 print("processed file 1")
 
-load(args[2])
-filtered<-plot_info
-
-rm(plot_info)
-
-fil<-rcorr(as.matrix(filtered[,c(4,10:12,14)]), type="pearson")
+filtered<-readRDS(args[2])
+fil<-rcorr(as.matrix(filtered[,c(2:14)]), type="pearson")
 fil_flat<-flattenCorrMatrix(fil$r, fil$P)
 
 print("now writing results")
 
-#write.table(com_flat, file="combined_cor.txt", row.names = F, quote = F)
-#write.table(fil_flat, file="filtered_cor.txt", row.names = F, quote = F)
+write.table(com_flat, file="combined_cor.txt", row.names = F, quote = F)
+write.table(fil_flat, file="filtered_cor.txt", row.names = F, quote = F)
 
 print("started plotting")
 
 
-pdf(file=args[3], onefile=T)  
+pdf(file=args[3], onefile=T, paper='A4r')  
 
 par(mfrow = c(1, 2))
-corrplot(com$r, type="upper", order="hclust", title="Combined dataset",
-            p.mat = com$P, sig.level = 0.01, insig = "blank")
+corrplot(com$r, type="upper", title="Combined dataset",
+            p.mat = com$P, sig.level = 0.01, insig = "blank",  mar=c(0,0,1,0))
 
-corrplot(fil$r, type="upper", order="hclust", title="Filtered_dataset",
-            p.mat = fil$P, sig.level = 0.01, insig = "blank")
+corrplot(fil$r, type="upper", title="Filtered_dataset",
+            p.mat = fil$P, sig.level = 0.01, insig = "blank",  mar=c(0,0,1,0))
 
 dev.off()
 
