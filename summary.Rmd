@@ -1,0 +1,43 @@
+---
+title: "Summary of progressive selection of variants Run1"
+author: "Kiranmayee Bakshy"
+date: "June 19, 2018"
+output: html_document
+---
+
+**#A summary of the filtration_run1 is as follows**
+ **Run1 consists of variants with no heterozygous genotype found in non-target animals**
+ 
+  * Kept 3136979 out of 15440507 variant sites
+  * Removed 1664776 singletons
+  * Removed 342817 sites that were heterozygous in all other regions
+
+ **Summary statistics for INFO fields** 
+  
+  ```{r}
+plot_info<-readRDS("filtered_run1/filtered_run1.vcf.gz.rds")
+summary(plot_info)
+```
+
+**Plink summary statistics such as MAF, AAF, fraction missing per sample, fraction missing per variant, HWE**
+   
+   ```{r}
+#Summary of filtered dataset MAF
+df<-readRDS("filtered_run1/filtered_run1.frq.rds")
+dim(df)
+summary(df)
+
+#Summary of filtered dataset AAF
+library(data.table)
+df<-fread("filtered_run1/filtered_run1.afreq", header=T, select=c("ID", "ALT_FREQS"))
+summary(df)
+
+#Summary of filtered dataset fraction missing per variant
+df<-readRDS("filtered_run1/filtered_run1.lmiss.rds")
+summary(df)
+
+#Summary of filtered dataset fraction missing per sample
+df<-read.delim("filtered_run1/filtered_run1.imiss", header=T, sep="")
+dim(df)
+summary(df[,c(2,6)])
+```
