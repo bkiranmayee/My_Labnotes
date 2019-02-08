@@ -63,9 +63,5 @@ Now everything seems to work...
 ## Variant calling
 
 I need to select BAMS with atleast 20-25X coverage for variant calling, as this is one of the requirement to improve signal to noise ratio. 
-So run the bam stats again on all the bams and tabulate.
-
-
-
-
+So run the bam stats again on all the dedup bams now and tabulate.
 
