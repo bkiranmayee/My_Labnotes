@@ -65,3 +65,11 @@ Now everything seems to work...
 I need to select BAMS with atleast 20-25X coverage for variant calling, as this is one of the requirement to improve signal to noise ratio. 
 So run the bam stats again on all the dedup bams now and tabulate.
 
+```bash
+# list all the dedup bams
+ls aligns/*/*.dedup.bam > dedup.bam.list
+perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_scripts/getBamStats.pl -n dedup.bam.list
+
+
+
+
