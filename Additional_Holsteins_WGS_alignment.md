@@ -69,6 +69,42 @@ So run the bam stats again on all the dedup bams now and tabulate.
 # list all the dedup bams
 ls aligns/*/*.dedup.bam > dedup.bam.list
 perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_scripts/getBamStats.pl -n dedup.bam.list
+```
+
+I realized that 10 samples are missing sorted.merged.dedup.bam.sorted.bam files.
+
+I wonder if all the jobs ran to completion.
+
+sacct -S 2019-01-01 -u kiranmayee.bakshy --format=User,JobID,Jobname,partition,state,time,start,end,elapsed,MaxRss,MaxVMSize,nnodes,ncpus,nodelist
+
+Okay there are only 14 indel realignemnt jobs that exited with zero status. What happened to the rest?
+
+There are 10 jobs which show the following error message: 
+
+```bash
+[kiranmayee.bakshy@sn-cn-8-1 CDDR]$ ls slurm* | xargs grep 'failed to open'
+slurm-505033.out:samtools index: failed to open "aligns/HOCAN000006193092/HOCAN000006193092.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505034.out:samtools index: failed to open "aligns/HOCAN000006229227/HOCAN000006229227.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505035.out:samtools index: failed to open "aligns/HOCAN000008432142/HOCAN000008432142.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505041.out:samtools index: failed to open "aligns/HOUSA000001427381/HOUSA000001427381.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505044.out:samtools index: failed to open "aligns/HOUSA000001556373/HOUSA000001556373.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505056.out:samtools index: failed to open "aligns/HOUSA000002040728/HOUSA000002040728.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505059.out:samtools index: failed to open "aligns/HOUSA000002103297/HOUSA000002103297.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505060.out:samtools index: failed to open "aligns/HOUSA000002125714/HOUSA000002125714.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505064.out:samtools index: failed to open "aligns/HOUSA000002290977/HOUSA000002290977.sorted.merged.bam.dedup.bam": No such file or directory
+slurm-505067.out:samtools index: failed to open "aligns/HOUSA000017349617/HOUSA000017349617.sorted.merged.bam.dedup.bam": No such file or directory
+```
+
+Now to restart indel realignment jobs that failed...
+
+```bash
+[kiranmayee.bakshy@sn-cn-8-1 CDDR]$ grep -Fvwf dedup.final.bam.list sorted.merged.bamlist > restart_indel_realignment
+[kiranmayee.bakshy@sn-cn-8-1 CDDR]$ cat restart_indel_realignment.bamlist | xargs -I {} sbatch indel_realign_markdups_kb.sh {} ARSUCD1.2.current_ref.fa
+```
+
+
+
+
 
 
 
