@@ -4,11 +4,11 @@ Input files needed are gff3 annotation file and genomic sizes file
 
 We can use awk and BEDOPS for calculating the percentage of genome covered by each feature (exon, mRNA, intron, intergenic and so on).
 
-Working directory: /mnt/nfs/nfs1/kiranmayee.bakshy/snpEff/data/GCA_002263795.2_ARS-UCD1.2
+Working directory: /mnt/nfs/nfs1/kiranmayee.bakshy/snpEff/data/genomes
 
 ```bash
 # First prepare the bed file for the required feature:
-awk '$3 == "exon"' genes.gff | /mnt/nfs/nfs2/bickhart-users/binaries/bin/convert2bed -i gff - -d > exons.bed
+awk '$3 == "exon"' original.genes.gff | /mnt/nfs/nfs2/bickhart-users/binaries/bin/convert2bed -i gff - -d > exons.bed
 # sort the bed file
 /mnt/nfs/nfs2/bickhart-users/binaries/bin/sort-bed exons.bed > exons.sorted.bed
 # Prepare the genome size file 
