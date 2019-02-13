@@ -44,8 +44,65 @@ awk '{print $4}' mRNA.sorted.bed | uniq | wc -l
 /mnt/nfs/nfs2/bickhart-users/binaries/bin/bedops --merge mRNA.sorted.bed | wc -l
 19813
 ```
+Now to make a list of features and calculate the genome coverage by each feature, I will automate by wrinting a small bash script.
+
+Here is the bash script to do this
+
+```bash
+#!/usr/bin/sh
+
+convert2bed=/mnt/nfs/nfs2/bickhart-users/binaries/bin/convert2bed
+sortbed=/mnt/nfs/nfs2/bickhart-users/binaries/bin/sort-bed
+bedops=/mnt/nfs/nfs2/bickhart-users/binaries/bin/bedops
+bedmap=/mnt/nfs/nfs2/bickhart-users/binaries/bin/bedmap
+#cowGSize=awk '{s+=$2;}END{print s;}' genomeSize.bed
+
+#$1 = gff file
+#$2 = genome_size.bed
+
+grep -v '#' $1 | awk '{print $3}' | sort | uniq  > features_all
+
+while read f; do
+	gen_cov=`grep "$f" $1 | $convert2bed -i gff - -d | $sortbed - | $bedops --merge - | $bedmap --echo-ref-size - $2 | awk '{s+=$1;}END{print s/2628411261;}'`
+	echo "$f"	"$gen_cov"
+done <features_all
+```
 
 
+```bash
+sh genome_cov.sh genes.gff genomeSize.bed
+```
+
+
+
+**Feature**|**Fraction of Genome coverage**
+:-----:|:-----:
+J\_gene\_segment|1.27E-07
+scRNA|1.96E-06
+C\_gene\_segment|1.34E-05
+V\_gene\_segment|1.85E-05
+miRNA|2.84E-05
+snoRNA|3.23E-05
+snRNA|6.07E-05
+rRNA|9.15E-05
+pseudogenic\_transcript|0.000701685
+pseudogene|0.000745154
+five\_prime\_UTR|0.00184731
+three\_prime\_UTR|0.00482611
+lnc\_RNA|0.0127188
+ncRNA|0.0128723
+ncRNA\_gene|0.0128723
+CDS|0.0133584
+biological\_region|0.0166946
+exon|0.0210438
+mRNA|0.360348
+gene|0.373804
+region|1.03326
+
+
+The above table is sorted by increasing order of genome coverage by the feature. Region indicates the chromosome, so it is represented as 100%.
+
+The highest coverage is by mRNA and gene. So it is better we cit off the mRNA from the annotation database and re-build. 
 
 
 
