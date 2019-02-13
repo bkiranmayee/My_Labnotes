@@ -1,4 +1,4 @@
-#Calculation of Genomic coverage by a feature
+# Calculation of Genomic coverage by a feature
 
 Input files needed are gff3 annotation file and genomic sizes file
 
