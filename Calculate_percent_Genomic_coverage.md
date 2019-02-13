@@ -104,5 +104,16 @@ The above table is sorted by increasing order of genome coverage by the feature.
 
 The highest coverage is by mRNA and gene. So it is better we cut off the mRNA from the gff file to re-build annotation database. 
 
+Rebuilding the database...
+
+```bash
+[kiranmayee.bakshy@assembler3 snpEff]$ echo "ARSUCD1.2" >> snpEff.config
+[kiranmayee.bakshy@assembler3 snpEff]$ java -jar snpEff.jar build -gff3 ARSUCD1.2
+```
+
+Now testing the build...
+
+
+
 
 
