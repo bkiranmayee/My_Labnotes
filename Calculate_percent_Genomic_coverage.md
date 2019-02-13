@@ -102,7 +102,7 @@ region|1.03326
 
 The above table is sorted by increasing order of genome coverage by the feature. Region indicates the chromosome, so it is represented as 100%.
 
-The highest coverage is by mRNA and gene. So it is better we cit off the mRNA from the annotation database and re-build. 
+The highest coverage is by mRNA and gene. So it is better we cut off the mRNA from the gff file to re-build annotation database. 
 
 
 
