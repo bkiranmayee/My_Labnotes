@@ -102,6 +102,54 @@ Now to restart indel realignment jobs that failed...
 [kiranmayee.bakshy@sn-cn-8-1 CDDR]$ cat restart_indel_realignment.bamlist | xargs -I {} sbatch indel_realign_markdups_kb.sh {} ARSUCD1.2.current_ref.fa
 ```
 
+The problem still exists, upon careful inspection I realized that the mark duplicates step is not running to completion.
+
+The output.slurm records that the disk quota is full. I tried to find the solution via stackoverflow:
+
+I need to set the tmp dir for the picard mark duplicates so that it doesn't use the default home directory.
+
+Restarting the Markduplicates step for the 10 bams which failed at this step...
+
+	# The modification for my script (markdups_kb.sh) was the following:
+	java -jar /software/7/apps/picard/64/2.9.2/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT I=$1 O=$dedup_bam M=$duplicates_metrics TMP_DIR=`pwd`/tmp
+ 
+
+### Preparing for variant calling ###
+
+	# Select samples for variant calling
+	ls ./*/*/*.dedup.bam > dedup.final.bam.list
+	module load samtools; 
+	perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_scripts/getBamStats.pl -n dedup.final.bam.list -o summary_stats_dedup_bams.2019.02.20.tab
+	
+	
+	# Let's see how many bams are under 5X coverage
+	perl -lane 'if($F[4] < 6){print $_;}' < summary_stats_dedup_bams.2019.02.20.tab | wc -l
+	24
+	
+	
+	# Too many. Now let's check high deviation from the mapping percentages
+	perl -lane 'if($F[5] == 0){next;} if($F[2]/$F[1] < 0.97){print $_;}' < summary_stats_dedup_bams.2019.02.20.tab | wc -l
+	6
+	
+	# So I will drop all bams under 5X coverage and the < 97% mapping rate bams
+	perl -lane 'if($F[5] == 0){next;} if($F[4] > 6 & $F[2]/$F[1] > 0.97){print $F[0];}' < summary_stats_dedup_bams.2019.02.20.tab > dedup.filtered.final.bam.list
+	
+	# The filtered list of bams is dedup.filtered.final.bam.list
+	# Now to queue up the samtools mpileup scripts
+	perl -ne '$_ =~ s/^\./\/beegfs\/project\/rumen_longread_metagenome_assembly\/kiranmayee\/CDDR\/Additional_Holstein/; print $_;' < dedup.filtered.final.bam.list > dedup.filtered.final.bam.fullpath.list
+
+	perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_pipeline/samtoolsMpileupBamsSlurm_kb.pl -b Additional_Holstein/vcfs -s ARSUCD1.2.current_ref.fa.samtools.mpileup.wins -t Additional_Holstein/dedup.filtered.final.bam.fullpath.list -f ARSUCD1.2.current_ref.fa -m true
+	
+For some reason that I can't figure out the above command doesn't work. The script fails to read the segments file...
+
+I hard coded in the script samtoolsMpileupBamsSlurm_kb.pl to generate 10 Mb segments to generate the scripts and queue up. This seems to work...
+
+	
+	perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_pipeline/samtoolsMpileupBamsSlurm_kb.pl -b Additional_Holstein/vcfs -t Additional_Holstein/dedup.filtered.final.bam.fullpath.list -f ARSUCD1.2.current_ref.fa -m true
+
+The above command has generated 282 segments and queued up around 282 samtools mpileup scripts and 282 bcf call scripts and 1 concat script
+
+	
 
 
 

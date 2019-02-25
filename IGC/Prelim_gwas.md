@@ -61,7 +61,7 @@ First do the LD pruning of the case-control dataset (datConCasBed), I used  plin
 
 The above command gives 2 files, prune.in and prune.out which can be used to subset the main data
 
-    [kiranmayee.bakshy@assembler2 datConCas]$ plink --bfile datConCasBed --extract plink.prune.in --out datConCaspr
+    [kiranmayee.bakshy@assembler2 datConCas]$ plink --bfile datConCasBed --cow --extract plink.prune.in --make-bed --out datConCaspr
     PLINK v1.90b4.4 64-bit (21 May 2017)
     Options in effect:
       --bfile datConCasBed

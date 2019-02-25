@@ -1,6 +1,6 @@
 ## Prepare Neogen genotyping results file for analyses##
 
-**1) Convert the neogen genotype file to plink format** 
+**1a) Convert the neogen genotype file to plink format** 
 
 This was done by a custom script: neogen\_to\_ped.pl
 
@@ -133,11 +133,50 @@ The out put was then manually edited to include the extra columns such as Family
 
  A map file was then generated
 
+
+**1b) Converting the plink file format to vcf keeping in mind the Ref allele:**
+
+     [kiranmayee.bakshy@assembler2 LD]$ plink --file neogen_updated --allow-extra-chr --recode vcf-iid --a2-allele Ref_allele.txt --out neogen_cleaned
+
+
+**1c) Imputation of Genotypes using BEAGLE**
+
+Input and output files for Beagle is VCF format
+
+    [kiranmayee.bakshy@assembler2 LD]$ srun java -Xmx50g -D$JAVA_HOME -jar /mnt/nfs/nfs2/bickhart-users/binaries/beagle.03Jul18.40b.jar gt=neogen_cleaned.vcf out=neogen-imputed
+
+The imputation seems to be successful for all the variants except for KIR_41480 because there is only one marker that belongs to that Chromosome.
+Mmmm! I should first make fake UMD3 coordinates and then do the imputation I guess!!
+
+OK redo the whole thing again.
+
+I converted the map and ped files to binary plink format by giving the Ref allele text file so that it does not change the alleles based on frequency. I have also cleaned the dataset:
+
+     plink --file neogen_updated --geno 0.2 --maf 0.05 --cow --allow-extra-chr --make-bed --recode --a2-allele Ref_allele.txt --out neogen_cleaned
+
+I cleaned the data based on call rate (reject > 80% missing per variant (--geno 0.2) and MAF (--maf 0.05). I get only 36 variants left. (saved the dataset as neogen_cleaned)
+
+Then I gave arbitrary UMD3 coordinates and updated the SNP IDs manually in an excel sheet (UMD3_fake_coordinates.xlsx).
+
+I saved the original SNP coordinates map file as neogen_cleaned_original.map. 
+
+I then converted it to VCF format for imputation using Beagle
+
+    plink --file neogen_cleaned --geno 0.2 --maf 0.05 --cow --allow-extra-chr --recode vcf-iid --a2-allele Ref_allele.txt --out neogen_cleaned
+    java -Xmx50g -D$JAVA_HOME -jar /mnt/nfs/nfs2/bickhart-users/binaries/beagle.03Jul18.40b.jar gt=neogen_cleaned.vcf out=neogen-imputed
+
+Now the imputation was successful and the process is logged in neogen-imputed.log
+
+Converting the imputed vcf back to plink format:
+
+
+
+
 **2) Filtration using plink 1.9**
 
 Filters such as missing per sample, per variant, MAF, HWE and LD were applied on the data using plink 
 
-    [kiranmayee.bakshy@assembler2 LD]$ plink --file neogen_updated --allow-extra-chr --mind 0.1 --maf 0.05 --geno 0.1 --make-bed --out neogen_cleaned
+    [kiranmayee.bakshy@assembler2 LD]$ plink --file neogen_updated --cow --allow-extra-chr --mind 0.1 --maf 0.05 --geno 0.1 --make-bed --out neogen_cleaned
     PLINK v1.90b4.4 64-bit (21 May 2017)   www.cog-genomics.org/plink/1.9/
     (C) 2005-2017 Shaun Purcell, Christopher Chang   GNU General Public License v3
     Logging to neogen_cleaned.log.
@@ -174,7 +213,7 @@ Filters such as missing per sample, per variant, MAF, HWE and LD were applied on
 
 **Calculate Hardy-Weinberg exact p-value using plink**
     
-    [kiranmayee.bakshy@assembler2 LD]$ plink --bfile neogen_cleaned  --allow-extra-chr --hardy midp --out hardy
+    [kiranmayee.bakshy@assembler2 LD]$ plink --bfile neogen_cleaned  --cow --allow-extra-chr --hardy midp --out hardy
     PLINK v1.90b4.4 64-bit (21 May 2017)   www.cog-genomics.org/plink/1.9/
     (C) 2005-2017 Shaun Purcell, Christopher Chang   GNU General Public License v3
     Logging to hardy.log.
@@ -213,7 +252,8 @@ MHC|MHC\_43656|UNAFF|G|T|13/22/174|0.1053|0.2033|8.09E-09
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-      [kiranmayee.bakshy@assembler2 LD]$ plink --bfile neogen_cleaned --allow-extra-chr --hwe 8.1e-6 --recode --out neogen_hwe_filtered
+
+    [kiranmayee.bakshy@assembler2 LD]$ plink --bfile neogen_cleaned --cow --allow-extra-chr --hwe 8.1e-6 --recode --out neogen_hwe_filtered
     PLINK v1.90b4.4 64-bit (21 May 2017)   www.cog-genomics.org/plink/1.9/
     (C) 2005-2017 Shaun Purcell, Christopher Chang   GNU General Public License v3
     Logging to neogen_hwe_filtered.log.
@@ -223,7 +263,7 @@ MHC|MHC\_43656|UNAFF|G|T|13/22/174|0.1053|0.2033|8.09E-09
       --hwe 8.1e-6
       --out neogen_hwe_filtered
       --recode
-    
+      
     515987 MB RAM detected; reserving 257993 MB for main workspace.
     36 variants loaded from .bim file.
     852 people (0 males, 852 females) loaded from .fam.
@@ -238,10 +278,10 @@ MHC|MHC\_43656|UNAFF|G|T|13/22/174|0.1053|0.2033|8.09E-09
     --recode ped to neogen_hwe_filtered.ped + neogen_hwe_filtered.map ... done.
 
 
-
 **Calculate LD for the remaining 25 variants**
 
-    [kiranmayee.bakshy@assembler2 LD]$ plink --file neogen_hwe_filtered --allow-extra-chr --r2 inter-chr dprime with-freqs
+
+        [kiranmayee.bakshy@assembler2 LD]$ plink --file neogen_hwe_filtered --allow-extra-chr --r2 inter-chr dprime with-freqs
     PLINK v1.90b4.4 64-bit (21 May 2017)   www.cog-genomics.org/plink/1.9/
     (C) 2005-2017 Shaun Purcell, Christopher Chang   GNU General Public License v3
     Logging to plink.log.

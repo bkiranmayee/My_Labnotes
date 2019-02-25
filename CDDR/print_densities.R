@@ -22,10 +22,12 @@ outname=grep("(\\w+)\\.", args[2], perl=T, value=T)
 
 load(args[1])
 combined<-plot_info
+combined[,2:14]<-log1p(combined[2:14])
 
 rm(plot_info)
 
 filtered<-readRDS(args[2])
+filtered[,2:14]<-log1p(filtered[2:14])
 
 print("loaded dataframes")
 
