@@ -228,7 +228,9 @@ Now queuing up the GWAS jobs on the ceres cluster using the shell and R scripts 
 	cat round3/snpfile.list3 | xargs -I {} sbatch runR.sh {}
 
 
-When I GWAS for all the SNPs complete, I need to concatenate all the results, sort and plot the Manhattan and QQ plots.
+When GWAS for all the SNPs complete, I need to concatenate all the results, sort and plot the Manhattan and QQ plots.
+
+
 
 
 

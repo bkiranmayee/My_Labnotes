@@ -149,7 +149,14 @@ I hard coded in the script samtoolsMpileupBamsSlurm_kb.pl to generate 10 Mb segm
 
 The above command has generated 282 segments and queued up around 282 samtools mpileup scripts and 282 bcf call scripts and 1 concat script
 
-	
+It seems all the call scripts have mpileup command and not the call command.
+
+I need to cancel all the call scripts and process them separately...
+
+	squeue -u kiranmayee.bakshy | grep "call_" | awk '{print $1}' | xargs -I {} scancel {}
+
+Now wait until the mpileup bcf files are ready and then process them to call the variants using process_bcfs.sh script. 
+
 
 
 

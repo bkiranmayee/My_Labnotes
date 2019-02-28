@@ -474,7 +474,62 @@ The Rscript is as follows:
     write.table(dat.ped, file = paste(args[2],"aipl.ped", sep="."), sep=" ",col.names=F, quote=F)
 
 
-The final data set in AIPL format are at the following location in my [Google drive](https://drive.google.com/drive/folders/1peaeLDXp3GCWKEo5WP_Fm_Z4R-lSrHjo?usp=sharing )
 
 **Next step is resolving the ChrX coordinates into Chr30 (PAR=Pseudo Autosomal Regions) and Chr31 (ChrX).**
 
+The PAR region for ARS-UCDv1.2 is approximately at X:1-5700000.
+
+There is only one SNP in this region, so I manually changed the chromosome coordinates to 30.
+
+
+AIPL uses fixed width format files. 
+
+Example format for reference: 
+
+	AnKey Gender      NumSnps     Genotype  (this header is not part of the file)
+	1182835 1       641459  002224130020…
+	1496541 1       641459  002000100020…
+	1857310 1       641459  002222200020…
+	1979779 17      641459  002111111021…
+	2117682 1       641459  002111111021…
+	2160886 1       641459  002221111021…
+	2214378 1       641459  111110111111…
+	2409276 17      641459  002222200020…
+	2446336 1       641459  002111111021…
+	2513929 2       641459  002111100020…
+
+
+The “NumSNPs” is the total number of present or missing SNPs in the genotype array. It is a the sum total of all characters in the genotype string.
+
+I can do this easily in R:
+	
+	
+	library(tidyr)
+	library(gdata)
+	setwd("U:\\IGC_Project\\ars-ucdv1.2\\ARS-UCDv1.2_aipl_formatting")
+	# read in the current format
+	dat<-read.delim("final_set.aipl.ped", sep=" ", header=F, stringsAsFactors=F)
+	#drop second column to remove duplicate column of animal id
+	dat$V2<-NULL
+	# concatenate all the columns except the first without space
+	aipl<-unite(aipl, genotype, sep="", -1)
+	# give names to the existing columns for ref
+	names(aipl2)<-c("AnKey", "genotype")
+	# add number of snps column
+	aipl2$NumSnps<-110733
+	# Add gender column, in this case all are bulls might be 1 or 2
+	aipl2$Gender<-1
+	# rearrange columns in required order
+	aipl3<-aipl2[,c("AnKey","Gender","NumSnps","genotype")]
+	# check the structure of the dataframe
+	str(aipl3)
+	# write as a fixed width file
+	write.fwf(aipl3, "reformatted.aipl.ped", quote=F, sep=" ", rownames=F, colnames=F)
+	
+I am saving the R work space to quickly convert the gender coding in case my guess is wrong.
+
+	save.image("ped_to_aipl.RData")
+	
+The final data set in AIPL format are at the following location in my [Google drive](https://drive.google.com/drive/folders/1S2zcb8ZTxw638Wod_I6okaO9tlHln-aq?usp=sharing "Google drive")
+
+	
