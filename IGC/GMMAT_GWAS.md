@@ -108,9 +108,9 @@ I made a mistake by not writing the output to a file and then printing. The data
 
 I stopped the pending jobs and made changes to the Rscript. Now again submitted jobs to the cluster. 
 
-But there are around 70 files with weird output format. Lets reformat using some linux commands...
+But there are around 37 files with weird output format. Lets reformat using some linux commands...
 
-    for i in output.826*; do sort -k1 -n $i | tail -n+5 | awk 'ORS=NR%2?"\t":"\n"'| awk -v OFS='\t' '{print $7,$8,$9,$10,$11,$12,$13,$2,$3,$4,$5}' >> gwas_output; done
+    for i in output.826*; do sort -k1 -n $i | tail -n+5 | awk 'ORS=NR%2?"\t":"\n"'| awk -v OFS='\t' '{print $2,$3,$4,$5,$6,$7,$8,$10,$11,$12,$13}' >> gwas_output; done
     
 The above command pipeline sorts the output by first column, removes the first 4 lines (program commands and header lines) which we don't need, merges every second line, prints tab-delimited columns in required order...
 
@@ -230,10 +230,73 @@ Now queuing up the GWAS jobs on the ceres cluster using the shell and R scripts 
 
 When GWAS for all the SNPs complete, I need to concatenate all the results, sort and plot the Manhattan and QQ plots.
 
+There were some output files which needs to be formatted properly, I did it using an Rscript ()
+
+After concatenation and sorting (according to chr and position) of all the GMMAT output files, I plotted both the Manhattan and QQ plots.
+
+Here are the plots:
 
 
+![Manhattan plot](https://i.imgur.com/iBblV4W.png)
+
+![QQplot](https://i.imgur.com/jXN6eFy.png)
 
 
+**Summary of the significant SNPs:**
+
+| ID                        | CHR | POS      | REF | ALT | N    | Alt AF      | BETA         | SE          | pval     | converged | MAF/Irish Holstein      | MAF/US Holstein (172)|
+|---------------------------|-----|----------|-----|-----|------|-------------|--------------|-------------|----------|-----------|----------|---------|
+| BovineHD0700028028        | 7   | 96196083 | C   | A   | 1765 | 0.837677054 | 0.571489432  | 0.113696428 | 5.00E-07 | TRUE      | 0.16 |         |
+| ARS_PIRBRIGHT_18_62766196 | 18  | 63021818 | G   | A   | 1797 | 0.517529215 | -2.074083012 | 0.276753219 | 6.66E-14 | TRUE      | 0.482    | 0.66    |
+| ARS_PIRBRIGHT_18_63141688 | 18  | 63397310 | C   | G   | 1797 | 0.681691708 | -0.734112587 | 0.109094639 | 1.71E-11 | TRUE      | 0.32 | 0.31    |
+
+**The significant SNP on BTA 7 was not previously reported either by the Roslin GWAS study or in the thesis by Raphaka et al.**
+
+LD between the 2 significant SNPs on BTA 18 has been calculated: **R2 = 0.32**
+
+### Principle Components Analysis: ###
+
+PCA was carried out using plink:
+
+PLINK v1.90b4.4 64-bit (21 May 2017)
+Options in effect:
+  --1
+  --bfile /mnt/nfs/nfs2/bickhart-users/natdb_sequencing/prelim_gwas/round2/merge1
+  --covar /mnt/nfs/nfs2/bickhart-users/natdb_sequencing/prelim_gwas/trial2/merge1_cov.txt
+  --cow
+  --out pc_cov
+  --pca header var-wts
+
+Hostname: assembler3.agil.barc.ba.ars.usda.gov
+Working directory: /mnt/nfs/nfs2/bickhart-users/natdb_sequencing/prelim_gwas/round2/gmmat/pca
+Start time: Mon Mar  4 16:28:08 2019
+
+
+End time: Mon Mar  4 16:28:08 2019
+
+
+![pc12_plot](https://i.imgur.com/QMiNNR7.png)
+
+![pc13_plot](https://i.imgur.com/pgYGEt0.png)
+
+![pc23_plot](https://i.imgur.com/bdk95qd.png)
+
+
+I have calculated the inflation factor (lambda) using p-values to be **1.012** 
+ 
+	# Here is my R code for calculating the lambda: 
+    chisq<-qchisq(1-df$pval, 1)
+    lambda<-median(chisq)/qchisq(0.5,1)
+ 
+
+The genomic inflation factor is close to 1 which indicates there is no population stratification that can effect the GWAS.
+
+It seems like the population substructure has been taken care of by the GRM in the GWAS.
+
+
+Significant SNPs identified on BTA 23 as reported in the thesis by Raphaka et al
+
+ SNP1 = ARS-BFGL-NGS-40833; SNP2= Hapmap38114-BTA-57971; SNP3 = BTA-56563-no-rs
 
 
 
