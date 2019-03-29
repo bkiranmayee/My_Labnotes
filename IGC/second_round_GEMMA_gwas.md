@@ -202,9 +202,17 @@ Hope it works this time....
 
 Yes! two markers seems to be associated with bTB at both genome-wide and suggestive significance threshold...
 
+Here are the Manhattan and QQ-plots...
+
+![Manhattan_plot](https://i.imgur.com/dCOHZJ3.png)
+
+![QQ-plot](https://i.imgur.com/kmiVg0h.png)
+
 But GEMMA package is better suited for continuous phenotype while the p-values are usually inflated for binary phenotype...
 
 I am going to try GWAS using GMMAT package in R because as opposed to GEMMA, GMMAT implements generalized linear mixed model and also we have an option to select the type of distribution of out phenotype data. 
+
+The GWAS using GMMAT is summarized in [this](https://github.com/bkiranmayee/My_Labnotes/blob/master/IGC/GMMAT_GWAS.md) document.
 
 
 Meanwhile, here is the **Distance vs R2 plot and haploblock view of the 43 markers selected for the GWAS study**:
@@ -224,7 +232,6 @@ It is interesting to note that the 2 SNPs which were significantly associated wi
 
 Also, both these SNPs have HWE p-value < 10-8 
 
-I think these variants would get filtered out if we apply LD and HWE filters!!!
 
 
 ![](https://i.imgur.com/4h86gVF.png)

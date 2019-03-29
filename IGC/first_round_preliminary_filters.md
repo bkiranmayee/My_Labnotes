@@ -211,7 +211,7 @@ Filters such as missing per sample, per variant, MAF, HWE and LD were applied on
     --make-bed to neogen_cleaned.bed + neogen_cleaned.bim + neogen_cleaned.fam ...
     done.
 
-**Calculate Hardy-Weinberg exact p-value using plink**
+**Calculate Hardy-Weinberg exact p-value for the custom markers using plink**
     
     [kiranmayee.bakshy@assembler2 LD]$ plink --bfile neogen_cleaned  --cow --allow-extra-chr --hardy midp --out hardy
     PLINK v1.90b4.4 64-bit (21 May 2017)   www.cog-genomics.org/plink/1.9/
@@ -434,3 +434,6 @@ MHC|9213|MHC\_9213|0.10446|MHC|115082|MHC\_115082|0.226148|0.23176|0.7605|105869
     --make-bed to neogen_ld_filtered.bed + neogen_ld_filtered.bim +
     neogen_ld_filtered.fam ... done.
     --recode ped to neogen_ld_filtered.ped + neogen_ld_filtered.map ... done.
+
+
+We are filtering out too many custom markers if we apply the HWE and LD filters. So do not apply these filters for custom markers.

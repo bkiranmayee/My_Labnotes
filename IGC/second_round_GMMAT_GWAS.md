@@ -3,9 +3,11 @@ Labnotes on running GWAS for second round IGC markers using GMMAT
 
 Since GWAS using GEMMA package gave promising results, we are now skeptical and want to re-confirm because the GEMMA package uses linear mixed model (LMM) which is not suitable for association studies with binary phenotype. This is because the distribution of the binary phenotype is discrete (not continuous). 
 
+The GWAS results for the same datasets using a LMM implemented in GEMMA package can be found [here](https://github.com/bkiranmayee/My_Labnotes/blob/master/IGC/neogen_second_round_data_processing.md).
+
 We can use a generalized linear mixed model to fit the binary phenotype data using a logistic function that is more suitable for binary phenotype data. This can be implemented using GMMAT R package.
 
-The link for the GMMAT package description is [https://github.com/hanchenphd/GMMAT/blob/master/inst/doc/GMMAT.pdf](https://github.com/hanchenphd/GMMAT/blob/master/inst/doc/GMMAT.pdf "GMMAT"). 
+Click [here](https://github.com/hanchenphd/GMMAT/blob/master/inst/doc/GMMAT.pdf) for the GMMAT package description. 
 
 I tried to install this package but it was not working.
 
@@ -299,8 +301,337 @@ Significant SNPs identified on BTA 23 as reported in the thesis by Raphaka et al
  SNP1 = ARS-BFGL-NGS-40833; SNP2= Hapmap38114-BTA-57971; SNP3 = BTA-56563-no-rs
 
 
+I should run GWAS using the GMMAT-GLMM for other phenotype groups as well.
+
+I transferred all the prelim_gwas data from the AGIL cluster to CERES cluster.
+
+### Preparing for GWAS ###
+	
+	R
+	library(GMMAT)
+	> SeqArray::seqBED2GDS("/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.bed","/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.fMon Mar 18 13:21:43 2019en_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.bim","/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/pheno3/pheno3.gds")
+	PLINK BED to SeqArray GDS Format:
+    BED file: '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.bed' in the SNP-major mode (Sample X SNP)
+    FAM file: '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.fam' (1,571 samples)
+    BIM file: '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.bim' (187,281 variants)
+    sample.id  [md5: 0f18b93db7c409ea1d9d67165dfe8344]
+    variant.id  [md5: 0be5e97ff7bdc9f4ace3998ae7165297]
+    position  [md5: 5561756550f0ba98fb12c92358e3d6dc]
+    chromosome  [md5: 0bb1828d07890580f867520a5a5de9b3]
+    allele  [md5: ca54025cb04ff0c1795a9ea4ae6acaf9]
+    genotype  [md5: ee8a316d7f5853862d859bcd4fe34c43]
+    phase  [md5: 549766d0495616ddcc9472680c168266]
+    annotation/id  [md5: c7a60874372350ce93791337a4efb78d]
+    annotation/qual  [md5: 27e8297252c73098943854bf45d0186a]
+    annotation/filter  [md5: a5abcdc8c13c31aa4b353f6d42afe8c6]
+    sample.annotation
+	Done.
+	Mon Mar 18 13:23:39 2019
+	Optimize the access efficiency ...
+	Clean up the fragments of GDS file:
+    open the file '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/pheno3/pheno3.gds' (44.5M)
+    # of fragments: 104
+    save to '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/pheno3/pheno3.gds.tmp'
+    rename '/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/pheno3/pheno3.gds.tmp' (44.5M, reduced: 672B)
+    # of fragments: 48
+	Mon Mar 18 13:23:41 2019
+	> fam<-read.delim("/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno3.fam",sep=" ", header=F, stringsAsFactors=F)
+	> dim(fam)
+	[1] 1571    6
+	> master<-read.delim("/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno_cov_master_file.txt", sep="\t", header=T, stringsAsFactors=F)
+	> dim(master)
+	[1] 1966    9
+	> colnames(fam)<-c("id","fid","mid","pid","sex","bTB_status")
+	> pheno<-merge(fam,master)
+	>  dim(pheno)
+	[1] 1571   12 
+	> head(pheno)
+          id        fid bTB_status mid pid sex  prevalence breed age yr reason
+	1 G0052_0001 G0052_0001          1   0   0   2 0.004975124     2   5  3      1
+	2 G0052_0002 G0052_0002          1   0   0   2 0.004672897     2   4  2      1
+	3 G0052_0031 G0052_0031          1   0   0   2 0.018315019     2   4  3      1
+	4 G0052_0033 G0052_0033          1   0   0   2 0.018315019     2   5  3      1
+	5 G0052_0034 G0052_0034          1   0   0   2 0.018315019     2   4  3      1
+	6 G0052_0037 G0052_0037          1   0   0   2 0.018315019     2   2  3      1
+	  season
+	1      1
+	2      2
+	3      3
+	4      3
+	5      3
+	6      3
+	> write.table(pheno,"pheno3/pheno3.txt",sep="\t", row.names=F, quote=F)
 
 
+
+After preparing the required input files for GWAS, all the jobs were queued up on the msn partition.
+
+
+	 cat snp.filelist | xargs -I {} sbatch -p msn runR_pheno1.sh {}
+	 cat snp.filelist | xargs -I {} sbatch -p msn runR_pheno2.sh {}
+	 cat snp.filelist | xargs -I {} sbatch -p msn runR_pheno3.sh {}
+
+ 564 GWAS jobs are in queue. 
+
+
+### Calculation of correlation between the variables and the observed phenotypes ###
+
+	module load plink/1.9
+	plink --bfile /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/merge1 --cow --recode A --out merge1_coded
+
+	# First get the IGC marker SNP ids
+	grep ARS_PIRBRIGHT /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/snp_ids 2round.snpids
+
+
+	R
+	library(data.table)
+	soi<-scan("2round.snpids", what="character")
+	soi1<-c("FID","IID","PAT","MAT","SEX","PHENOTYPE",soi)
+	df<-fread("merge1_coded.raw", sep=" ", header=T, stringsAsFactors=F, select=soi1)
+	dfmatrix<-df[,6:ncol(df)]
+	phen<-df$PHENOTYPE
+	dfmatrix$PHENOTYPE<-NULL
+	dfcor<-apply(dfmatrix, 2, cor, phen, method="spearman", use="complete.obs")
+	dfcor1<-as.data.frame(dfcor)
+	head(dfcor1)
+	write.table(dfcor1,"corrs.txt", quote=F)
+
+
+
+
+
+**Here is the table of correlations of the variants with their observed genotypes:**
+
+
+**SNP**|**Spearman's Correlation**
+:-----:|:-----:
+ARS\_PIRBRIGHT\_18\_62766196\_G|0.219528796
+ARS\_PIRBRIGHT\_18\_63141688\_C|0.179086559
+ARS\_PIRBRIGHT\_18\_62460291\_C|0.052961227
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_9213\_A|0.046997021
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_115082\_G|0.040238401
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_260913\_G|0.038592112
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_59013\_G|0.036417677
+ARS\_PIRBRIGHT\_LIB14413\_LRC\_65014\_G|0.035008879
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_43656\_G|0.032541933
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_154399\_C|0.031273079
+ARS\_PIRBRIGHT\_23\_28535354\_C|0.03067357
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_57505\_T|0.030558447
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_120784\_T|0.027180376
+ARS\_PIRBRIGHT\_LIB14413\_LRC\_81028\_T|0.026502682
+ARS\_PIRBRIGHT\_18\_63084493\_G|0.024984508
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_86084\_A|0.024115301
+ARS\_PIRBRIGHT\_5\_98985645\_A|0.02197437
+ARS\_PIRBRIGHT\_5\_99194167\_C|0.02043433
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_181938\_C|0.018093232
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_116810\_G|0.018028378
+ARS\_PIRBRIGHT\_18\_63082203\_A|0.017343957
+ARS\_PIRBRIGHT\_18\_62644240\_C|0.015207313
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_324231\_C|0.014453114
+ARS\_PIRBRIGHT\_18\_63156196\_A|0.014336683
+ARS\_PIRBRIGHT\_18\_63186702\_C|0.01333829
+ARS\_PIRBRIGHT\_18\_62670367\_C|0.011557934
+ARS\_PIRBRIGHT\_18\_62716825\_T|0.010695395
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_73766\_A|0.010232829
+ARS\_PIRBRIGHT\_18\_62994372\_C|0.010004814
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_45690\_T|0.009224398
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_143922\_T|0.009092629
+ARS\_PIRBRIGHT\_18\_63114542\_A|0.008410634
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_2500\_A|0.007524241
+ARS\_PIRBRIGHT\_18\_63340289\_C|0.006927984
+ARS\_PIRBRIGHT\_18\_62559417\_G|0.004017045
+ARS\_PIRBRIGHT\_18\_63122963\_T|0.001454363
+ARS\_PIRBRIGHT\_18\_62812297\_G|0.000130911
+ARS\_PIRBRIGHT\_CH240\_391K10\_KIR\_41480\_G|-0.000238839
+ARS\_PIRBRIGHT\_23\_28648192\_G|-0.00177721
+ARS\_PIRBRIGHT\_18\_63020431\_G|-0.002368798
+ARS\_PIRBRIGHT\_5\_99412564\_G|-0.002473428
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_286137\_T|-0.00296507
+ARS\_PIRBRIGHT\_18\_63185710\_A|-0.003495626
+ARS\_PIRBRIGHT\_18\_62572950\_C|-0.004216221
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_380177\_T|-0.004287586
+ARS\_PIRBRIGHT\_CH240\_370M3\_LILR\_LRC\_174904\_A|-0.008393048
+ARS\_PIRBRIGHT\_CH240\_370M3\_LILR\_LRC\_61352\_G|-0.009381738
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_208321\_C|-0.011016219
+ARS\_PIRBRIGHT\_18\_63385249\_T|-0.011135805
+ARS\_PIRBRIGHT\_5\_99445508\_T|-0.011953829
+ARS\_PIRBRIGHT\_23\_28651088\_G|-0.013857578
+ARS\_PIRBRIGHT\_18\_63131111\_C|-0.015184965
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_36271\_T|-0.017171047
+ARS\_PIRBRIGHT\_5\_99333595\_A|-0.02056881
+ARS\_PIRBRIGHT\_18\_63089154\_C|-0.020806992
+ARS\_PIRBRIGHT\_5\_99780983\_A|-0.024254023
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_400205\_G|-0.024439277
+ARS\_PIRBRIGHT\_5\_99203402\_C|-0.025982077
+ARS\_PIRBRIGHT\_18\_63284810\_G|-0.027530566
+ARS\_PIRBRIGHT\_18\_62665698\_G|-0.030699009
+ARS\_PIRBRIGHT\_5\_99749976\_C|-0.031076452
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_302664\_A|-0.031139501
+ARS\_PIRBRIGHT\_18\_63294645\_G|-0.031726453
+ARS\_PIRBRIGHT\_CH240\_370M3\_LILR\_LRC\_72198\_G|-0.034977614
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_122678\_G|-0.035150117
+ARS\_PIRBRIGHT\_LIB14413\_LRC\_106729\_C|-0.036303868
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_395846\_A|-0.036892443
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_3538\_A|-0.037347012
+ARS\_PIRBRIGHT\_18\_63399311\_G|-0.041778568
+ARS\_PIRBRIGHT\_5\_99094858\_A|-0.042623685
+ARS\_PIRBRIGHT\_5\_99036250\_C|-0.044381619
+ARS\_PIRBRIGHT\_18\_63036451\_A|-0.048392362
+ARS\_PIRBRIGHT\_TPI4222\_A14\_MHCclassI\_MHC\_317666\_A|-0.050089839
+ARS\_PIRBRIGHT\_CH240\_370M3\_LILR\_LRC\_98785\_G|-0.05306057
+ARS\_PIRBRIGHT\_LIB14427\_MHC\_126886\_A|-0.053124507
+ARS\_PIRBRIGHT\_18\_63067935\_A|-0.054773753
+ARS\_PIRBRIGHT\_5\_99437819\_G|-0.056579468
+ARS\_PIRBRIGHT\_18\_62774779\_A|-0.07140013
+ARS\_PIRBRIGHT\_18\_63417698\_A|-0.09731957
+ARS\_PIRBRIGHT\_5\_99190989\_T|-0.118815193 	
+	
+
+### Construction of contingency tables and calculation of goodness of fit using chi square test for the significant SNPs
+
+	library(data.table)
+	soi<-scan("2round.snpids", what="character")
+	soi1<-c("FID","IID","PAT","MAT","SEX","PHENOTYPE",soi)
+	df<-fread("merge1_coded.raw", sep=" ", header=T, stringsAsFactors=F, select=soi1)
+	dfmatrix<-df[,6:ncol(df)]
+	df1<-lapply(dfmatrix,factor) 	
+	df2<-df1[ ,c("PHENOTYPE","ARS_PIRBRIGHT_18_62766196_G","ARS_PIRBRIGHT_18_62766196_G","ARS_PIRBRIGHT_5_99190989_T")]
+
+
+	# ARS_PIRBRIGHT_18_62766196_G
+	table(df2[,1:2])
+	         ARS_PIRBRIGHT_18_62766196_G
+	PHENOTYPE    	0    1    2
+	    controls   	61  398    7
+	    cases	    15 1310    6
+
+	prop.table(table(df2[,c(2,1)]))
+                           			PHENOTYPE
+	ARS_PIRBRIGHT_18_62766196_G        controls       cases
+                          0 		0.033945465 0.008347245
+                          1 		0.221480245 0.728992766
+                          2 		0.003895381 0.003338898
+
+	prop.table(table(df2[,c(2,1)]),1)
+                           PHENOTYPE
+	ARS_PIRBRIGHT_18_62766196_G      controls 	cases
+                          0 		0.8026316 	0.1973684
+                          1 		0.2330211 	0.7669789
+                          2 		0.5384615 	0.4615385
+	prop.table(table(df2[,c(2,1)]),2)
+                           PHENOTYPE
+	ARS_PIRBRIGHT_18_62766196_G     controls       cases
+                          0 		0.130901288 0.011269722
+                          1 		0.854077253 0.984222389
+                          2 		0.015021459 0.004507889
+
+	
+	> chisq.test(table(df2[,c(1,2)]))
+
+        Pearson's Chi-squared test
+
+	data:  table(df2[, c(1, 2)])
+	X-squared = 128.22, df = 2, p-value < 2.2e-16
+
+	Warning message:
+	In chisq.test(table(df2[, c(1, 2)])) :
+  	Chi-squared approximation may be incorrect
+
+
+	summary(table(df2[,c(1,2)]))
+	Number of cases in table: 1797
+	Number of factors: 2
+	Test for independence of all factors:
+	        Chisq = 128.22, df = 2, p-value = 1.434e-28
+	        Chi-squared approximation may be incorrect
+
+	# ARS_PIRBRIGHT_18_63141688_C
+	table(df2[,c(1,3)])
+	         ARS_PIRBRIGHT_18_63141688_C
+	PHENOTYPE   0   1   2
+	  controls 	259 197  10
+	  cases		479 777  75
+
+
+	prop.table(table(df2[,c(3,1)]))
+                           			PHENOTYPE
+	ARS_PIRBRIGHT_18_63141688_C     controls        cases
+                          0 		0.14412910 0.26655537
+                          1 		0.10962716 0.43238731
+                          2 		0.00556483 0.04173623
+
+
+	prop.table(table(df2[,c(3,1)]),1)
+                           PHENOTYPE
+	ARS_PIRBRIGHT_18_63141688_C        controls       cases
+                          0 		0.3509485 0.6490515
+                          1 		0.2022587 0.7977413
+                          2		 	0.1176471 0.8823529
+	prop.table(table(df2[,c(3,1)]),2)
+                           PHENOTYPE
+	ARS_PIRBRIGHT_18_63141688_C         controls       cases
+                          0 		0.55579399 0.35987979
+                          1 		0.42274678 0.58377160
+                          2 		0.02145923 0.05634861
+	chisq.test(table(df2[,c(1,3)]))
+
+        Pearson's Chi-squared test
+
+	data:  table(df2[, c(1, 3)])
+	X-squared = 57.652, df = 2, p-value = 3.027e-13
+
+
+	summary(table(df2[,c(1,3)]))
+	Number of cases in table: 1797
+	Number of factors: 2
+	Test for independence of all factors:
+	        Chisq = 57.65, df = 2, p-value = 3.027e-13
+
+
+	# ARS_PIRBRIGHT_5_99190989_T
+	table(df2[,c(1,4)])
+	         ARS_PIRBRIGHT_5_99190989_T
+	PHENOTYPE    0    1    2
+	 controls  	359  104    3
+	 cases		1156  173    2
+
+	
+	prop.table(table(df2[,c(4,1)]))
+                          			PHENOTYPE
+	ARS_PIRBRIGHT_5_99190989_T    	controls       cases    
+    	                     0 		0.199777407 0.643294380
+    	                     1 		0.057874235 0.096271564
+    	                     2 		0.001669449 0.001112966
+
+	prop.table(table(df2[,c(4,1)]),1)
+                          PHENOTYPE
+	ARS_PIRBRIGHT_5_99190989_T        controls       cases
+                         0 		0.2369637 0.7630363
+                         1 		0.3754513 0.6245487
+                         2 		0.6000000 0.4000000
+	prop.table(table(df2[,c(4,1)]),2)
+                          PHENOTYPE
+	ARS_PIRBRIGHT_5_99190989_T          controls       cases
+                         0 		0.770386266 0.868519910
+                         1 		0.223175966 0.129977461
+                         2 		0.006437768 0.001502630
+	chisq.test(table(df2[,c(4,1)]))
+
+        Pearson's Chi-squared test
+
+	data:  table(df2[, c(4, 1)])
+	X-squared = 26.413, df = 2, p-value = 1.838e-06
+
+	Warning message:
+	In chisq.test(table(df2[, c(4, 1)])) :
+ 	 Chi-squared approximation may be incorrect
+
+	summary(table(df2[,c(1,4)]))
+	Number of cases in table: 1797
+	Number of factors: 2
+	Test for independence of all factors:
+	        Chisq = 26.413, df = 2, p-value = 1.838e-06
+	        Chi-squared approximation may be incorrect
 
 
 
