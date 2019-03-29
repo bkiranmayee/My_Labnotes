@@ -78,3 +78,19 @@ Here is the script (runFastQC.sh) to run fastqc:
 	# Now queuing up the fastqc jobs for all except the 2 unsuccessful samples:
 
 	ls ./*/*.fastq.gz | grep -v 'ERR2694977' | grep -v 'ERR2694981' | xargs -I {} sbatch runFastQC.sh {}
+
+	# The unsuccesful downloads are now successful
+	# Running the fastqc for these files as well
+	cat fastq_files | xargs -I {} sbatch runFastQC.sh {}
+
+	# run multiQC
+	module load python_3
+	cd CDDR/sra_data/qc/
+	multiqc -i "CDDR SRA validation dataset Fastq Summary" -n cddr_sra_fastqc_report -o multQC .
+
+
+
+
+
+	
+	

@@ -48,7 +48,7 @@ perl ~/perl_toolchain/sequence_data_scripts/getBamStats.pl -b aligns/HOCAN000006
 cat sorted.merged.bamlist | xargs -I {} sbatch indel_realign_markdups_kb.sh {} ARSUCD1.2.current_ref.fa
 ```
 
-This script needs to be corrected because it was designed for AGIL cluster.
+This script needs to be adapted because it was designed for AGIL cluster.
 
 Ok now after correcting, it again failed because the sequence dictionary file for the ref genome fasta is absent.
 
@@ -156,6 +156,36 @@ I need to cancel all the call scripts and process them separately...
 	squeue -u kiranmayee.bakshy | grep "call_" | awk '{print $1}' | xargs -I {} scancel {}
 
 Now wait until the mpileup bcf files are ready and then process them to call the variants using process_bcfs.sh script. 
+
+	# Rerunning the call commands
+	sbatch --nodes=1 --mem=30000 -p medium --ntasks-per-node=1 process_bcfs.sh
+
+	# Creating sorted file lists for each chromosome/scaffold-category
+	perl -e 'use File::Basename; %uniques;  @f = `ls vcf_files/*.vcf.gz`; chomp(@f); foreach my $f (@f){@fsegs = split(/_/, basename($f)); push(@{$uniques{"$fsegs[0]\_$fsegs[1]\_$fsegs[2]"}}, $f);} foreach my $n (keys(%uniques)){open(OUT, "> $n.file.list"); foreach my $v (@{$uniques{$n}}){print OUT "$v\n";} close OUT;}'
+	
+	# Now I need to condense the VCFs into singular files
+	mkdir condensed_vcfs
+	for i in *.file.list; do name=`echo $i | cut -d'.' -f1 | cut -d'_' -f3`; echo $name; for j in `cat $i`; do bcftools index $j; done; sbatch --nodes=1 --ntasks-per-node=1 --mem=20000 -p short --wrap="bcftools concat -a -f $i -O z -o condensed_vcfs/$name.vcf.gz -d all";done
+	
+	# Calculating stats
+	mkdir condensed_vstats
+	for i in condensed_vcfs/*.vcf.gz; do name=`basename $i | cut -d'.' -f1`; echo $name; bcftools index $i; bcftools stats -F /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/ARSUCD1.2.current_ref.fa $i > condensed_vstats/$name.vcf.stats; done
+
+	mkdir vcfstatplots
+	for i in condensed_vstats/*.stats; do name=`basename $i | cut -d'.' -f1`; echo $name; plot-vcfstats -r -p vcfstatplots/$name -T "chr$name" $i; done
+
+I am getting an error, [E::main] unrecognized command 'plot-vcfstats'
+
+I am not able to figure out what's wrong...
+
+
+
+
+
+
+
+
+
 
 
 
