@@ -484,7 +484,7 @@ There is only one SNP in this region, so I manually changed the chromosome coord
 
 AIPL uses fixed width format files. 
 
-Example format for reference: 
+Example AIPL format for reference: 
 
 	AnKey Gender      NumSnps     Genotype  (this header is not part of the file)
 	1182835 1       641459  002224130020…
@@ -512,7 +512,7 @@ I can do this easily in R:
 	#drop second column to remove duplicate column of animal id
 	dat$V2<-NULL
 	# concatenate all the columns except the first without space
-	aipl<-unite(aipl, genotype, sep="", -1)
+	aipl2<-unite(aipl, genotype, sep="", -1)
 	# give names to the existing columns for ref
 	names(aipl2)<-c("AnKey", "genotype")
 	# add number of snps column
@@ -531,5 +531,182 @@ I am saving the R work space to quickly convert the gender coding in case my gue
 	save.image("ped_to_aipl.RData")
 	
 The final data set in AIPL format are at the following location in my [Google drive](https://drive.google.com/drive/folders/1S2zcb8ZTxw638Wod_I6okaO9tlHln-aq?usp=sharing "Google drive")
+
+
+### Change in imputation preference ###
+
+Because imputation takes a lot of time, it is better we concentrate on the important SNPs in the IGC regions plus the second round marker selections that were used for bTB GWAS.
+
+**Steps to be done:**
+	
+- Extract the IGC regions from the 172 animals CDDR dataset and apply filters
+- Extract the second round markers (both IGC and haplotype regions)
+- Concat the above vcfs 
+- Liftover from ARSUCDv14 to ARSUCDv1.2 
+- Place the unlifted or liftover rejected markers manually
+- Convert the format to AIPL  
+	
+
+**These are the IGC regions on ARSUCDv14**
+
+| IGC | Chr | Start  | End      |
+|:--- | :---| ---:   | ---:     |
+|MHC | 23 | 28460024 | 28533695 |
+|LRC | 18 | 63110866 | 63144659 |
+|NKC | 5  | 98792567 | 99508055 |
+ 
+
+Now to extract these regions I transferred the combined vcf to local machine because AGIL is down
+
+*working directory: /cygdrive/u/IGC_Project/arsucdv14*
+
+
+		# Extract IGC regions
+		bcftools view -R igc_regions.txt -Oz -o igc_regions_arsucdv14.vcf.gz combined_arsucdv14.vcf.gz
+		gunzip -c igc_regions_arsucdv14.vcf.gz | grep -v '#' | wc -l
+		21687
+		 gunzip -c igc_regions_arsucdv14.vcf.gz | grep -v '#' | awk '{print $1}' | sort | uniq -c
+	    576 18
+	    903 23
+	  20208 5
+		bcftools index igc_regions_arsucdv14.vcf.gz
+		# Filter these sites
+		bcftools view -m2 -M2 -v snps igc_regions_arsucdv14.vcf.gz | bcftools view -q 0.25 | bcftools view -i 'QUAL == 999 && AN > 258' | bgzip > igc_regions_filtered.vcf.gz
+		gunzip -c igc_regions_filtered.vcf.gz | grep -v '#' | awk '{print $1}' | sort | uniq -c	
+	   		73 18
+		    124 23
+		   8966 5
+
+		# Extract second round markers in IGC regions
+		bcftools view -R /cygdrive/u/IGC_Project/marker_selections_arsucdv14.tab -Oz -o marker_selections_arsucdv14.vcf.gz combined_arsucdv14.vcf.gz	 	
+		bcftools index marker_selections_arsucdv14.vcf.gz
+
+				
+		# Extract second round markers in alternate haplotype regions
+		bcftools view -R /cygdrive/u/IGC_Project/marker_selections_arsucdv14.tab -Oz -o igc_hap_regions.vcf.gz igc.id.vcf.gz
+		bcftools index igc_hap_regions.vcf.gz
+		
+		# Concat the above generated vcfs
+		bcftools concat -a -D -Oz -o igc_fil_plus_marker_selections.vcf.gz igc_regions_filtered.vcf.gz marker_selections_arsucdv14.vcf.gz igc_hap_regions.vcf.gz
+		bcftools index igc_fil_plus_marker_selections.vcf.gz
+
+		# Check the presence of all 44 markers
+		 bcftools view -R /cygdrive/u/IGC_Project/marker_selections_arsucdv14.tab igc_fil_plus_marker_selections.vcf.gz | grep -v '#' | awk '{print $1}' | sort | uniq -c
+     		24 18
+      		1 23
+      		7 5
+      		9 LIB14427_MHC
+      		4 TPI4222_A14_MHCclassI_MHC
+
+		bcftools view -R /cygdrive/u/IGC_Project/marker_selections_arsucdv14.tab igc_fil_plus_marker_selections.vcf.gz | grep -v '#' | wc -l
+		44
+		# Total number of markers
+		bcftools query -f "%CHROM\t%POS0\t%END\t%REF\t%ALT\n" igc_fil_plus_marker_selections_snps.vcf.gz | wc -l
+		9200
+		# SNPs per chromosome
+		gunzip -c igc_fil_plus_marker_selections.vcf.gz | grep -v '#' | awk '{print $1}' | sort | uniq -c
+	     94 18
+	    125 23
+	   8968 5
+	      9 LIB14427_MHC
+	      4 TPI4222_A14_MHCclassI_MHC
+
+
+
+Next step is liftover vcf from 1) ARSUCDv14 to ARSUCDv1.2 2) combined_pirbright to ARSUCDv1.2
+
+AGIL is down and I have all the liftover chains there... Transferring the liftover chains to ceres cluster.
+
+*working directory: /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/NatDb_imputation_datasets*
+
+liftover chains have been transferred to */beegfs/project/rumen_longread_metagenome_assembly/liftover_chains*
+
+	sbatch --nodes=1 --mem=10000 --ntasks-per-node=1 --partition=msn --wrap="java -jar /software/7/apps/picard/64/2.9.2/picard.jar LiftoverVcf I=arsucdv14/igc_regions_filtered.vcf.gz O=arsucdv1.2/igc_regions_filtered.vcf CHAIN=/beegfs/project/rumen_longread_metagenome_assembly/liftover_chains/ARS-UCDv14_to_ARS-UCDv1.2.liftover.chain REJECT=arsucdv14/igc_regions_filtered_unmapped.vcf R=/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/ARS-UCD1.2.PlusY.fa WRITE_ORIGINAL_POSITION=true"
+ 
+	sbatch --nodes=1 --mem=10000 --ntasks-per-node=1 --partition=msn --wrap="java -jar /software/7/apps/picard/64/2.9.2/picard.jar LiftoverVcf I=arsucdv14/igc_hap_regions.vcf.gz O=arsucdv1.2/igc_hap_regions_.vcf CHAIN=/beegfs/project/rumen_longread_metagenome_assembly/liftover_chains/pirbright_to_ARS-UCDv1.2.liftover.chain REJECT=arsucdv14/igc_hap_regions_unmapped.vcf R=/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/ARS-UCD1.2.PlusY.fa WRITE_ORIGINAL_POSITION=true"
+
+	sbatch --nodes=1 --mem=10000 --ntasks-per-node=1 --partition=msn --wrap="java -jar /software/7/apps/picard/64/2.9.2/picard.jar LiftoverVcf I=arsucdv14/marker_selections_arsucdv14.vcf.gz O=arsucdv1.2/marker_selections_1.vcf CHAIN=/beegfs/project/rumen_longread_metagenome_assembly/liftover_chains/pirbright_to_ARS-UCDv1.2.liftover.chain REJECT=arsucdv14/marker_selections_unmapped1.vcf R=/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/ARS-UCD1.2.PlusY.fa WRITE_ORIGINAL_POSITION=true"
+
+	sbatch --nodes=1 --mem=10000 --ntasks-per-node=1 --partition=msn --wrap="java -jar /software/7/apps/picard/64/2.9.2/picard.jar LiftoverVcf I=arsucdv14/marker_selections_arsucdv14.vcf.gz O=arsucdv1.2/marker_selections_2.vcf CHAIN=/beegfs/project/rumen_longread_metagenome_assembly/liftover_chains/ARS-UCDv14_to_ARS-UCDv1.2.liftover.chain REJECT=arsucdv14/marker_selections_unmapped2.vcf R=/beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/ARS-UCD1.2.PlusY.fa WRITE_ORIGINAL_POSITION=true"
+
+	# Now concat all the lifted over vcf files
+	/beegfs/project/rumen_longread_metagenome_assembly/binaries/htslib-1.9/bgzip igc_regions_filtered.vcf
+	/beegfs/project/rumen_longread_metagenome_assembly/binaries/htslib-1.9/bgzip marker_selections_2.vcf
+	
+	module load bcftools
+	
+	bcftools index marker_selections_2.vcf.gz
+	bcftools index igc_regions_filtered.vcf.gz
+	# set ID
+	bcftools annotate -I 'bakshy\_%INFO/OriginalContig\_%INFO/OriginalStart\_%REF\_%ALT' -Oz -o arsucdv1.2/igc_regions_filtered_id.vcf.gz arsucdv1.2/igc_regions_filtered.vcf.gz
+	bcftools annotate -I 'ARS\_PIRBRIGHT\_%INFO/OriginalContig\_%INFO/OriginalStart\_%REF\_%ALT' -Oz -o arsucdv1.2/marker_selections_2_id.vcf.gz arsucdv1.2/marker_selections_2.vcf.gz
+
+	bcftools index marker_selections_2_id.vcf.gz
+	bcftools index igc_regions_filtered_id.vcf.gz
+
+	bcftools concat -a -a -D -Oz -o igc_fil_plus_marker_selections.vcf.gz igc_regions_filtered_id.vcf.gz marker_selections_2_id.vcf.gz
+	bcftools annotate --rename-chrs ncbiChr_to_num.tab -Oz -o igc_fil_plus_marker_selections_Chrnum.vcf.gz igc_fil_plus_marker_selections.vcf.gz
+	bcftools index igc_fil_plus_marker_selections_Chrnum.vcf.gz
+
+
+	gunzip -c igc_fil_plus_marker_selections_Chrnum.vcf.gz | grep -v '#' | awk '{print $1}' | sort | uniq -c
+      89 18
+     125 23
+   	8968 5
+
+	bcftools view -m2 -M2 -v snps -Oz -o igc_fil_plus_marker_selections_Chrnum_snps.vcf.gz  igc_fil_plus_marker_selections_Chrnum.vcf.gz 
+	bcftools index igc_fil_plus_marker_selections_Chrnum_snps.vcf.gz 
+
+	# concat the arbitrary hap regions
+	bcftools concat -a -a -D -Oz -o igc_fil_plus_all_marker_selections.vcf.gz igc_fil_plus_marker_selections_Chrnum_snps.vcf.gz igc_hap_regions_unmapped_ARB_sorted.vcf.gz
+
+	bcftools index igc_fil_plus_all_marker_selections.vcf.gz
+
+	module load plink/2.0
+	plink2 --vcf igc_fil_plus_all_marker_selections.vcf --const-fid --cow --export A-transpose --out igc_fil_plus_marker_selections
+
+	 
+	
+Now to convert the traw output to AIPL format:
+
+	library(tidyr)
+	library(gdata)	    
+    dat <- read.delim("igc_fil_plus_marker_selections.traw", header=T, stringsAsFactors=FALSE)
+    write.fwf(dat[,c(1,2,4)], "igc.chromosome.data", quote=F, sep=" ", rownames=F, colnames=F)
+
+    samples<-names(dat[,c(7:ncol(dat))])
+    samples.list<-gsub("X0_","",samples)
+    names(dat[,c(7:ncol(dat))])<-samples.list
+    dat.ped<-t(dat[,c(7:ncol(dat))])
+	df<-as.data.frame(dat.ped, stringsAsFactors=F, row.names=samples.list)
+	df1<-lapply(df, function(x) ifelse(x == 0, 2, ifelse(x == 2, 0, x)))
+	df1<-as.data.frame(df1)
+	df1$Ankey<-samples.list
+    # add number of snps column
+	df1$NumSnps<-9195
+	# Add gender column, in this case all are bulls might be 1 or 2
+	df1$Gender<-1
+	# rearrange columns in required order
+	df1<-df1[,c("AnKey","Gender","NumSnps",1:9195)]
+	write.table(df1,"igc.test",sep=" ",col.names=T,row.names=F,quote=F,na="5")
+	f<-read.table("igc.test",sep=" ",header=T, stringsAsFactors=F)
+	f2<-unite(f, genotype, sep="", -c(1,2,3))
+	write.fwf(f2, "igc.genotype", quote=F, sep=" ", rownames=F, colnames=F)
+
+	
+	
+	
+	
+    
+
+
+
+ 
+
+
+
+		
+		
+
 
 	
