@@ -137,3 +137,5 @@ All datasets used are the new assembly coordinates lifted over from ARSUCDv14 sy
     -tranchesFile modelling/run3/trial3.output.tranches \
     -rscriptFile modelling/run3/trial3.output.plots.R \
     
+
+Link to VQSR results analysis [document](https://github.com/bkiranmayee/My_Labnotes/blob/master/CDDR/vqsr_results_analysis.md)...

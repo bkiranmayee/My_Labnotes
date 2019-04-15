@@ -214,3 +214,5 @@ The bovineHD sites that I selected is based on just the lifted over coordinates 
 So, I subsetted the bovineHD sites that match both the ref and alt allele as follows:
  
 	bcftools view -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/overlapped_bovineHD_bed.txt -O z -o bovineHD2.vcf.gz f2.tagged.vcf.gz 
+
+Link to the VQSR trial [runs](https://github.com/bkiranmayee/My_Labnotes/blob/master/CDDR/initial_vqsr_trials.md)
