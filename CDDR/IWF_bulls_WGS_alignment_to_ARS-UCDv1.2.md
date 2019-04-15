@@ -54,8 +54,13 @@ Markduplicates and INDEL realign:
 	
 	# some bam files were not created or I suspect got accidentally deleted (on March 22 I guess?) 
 	007HO092426, 007HO10687, 007HO09221, 007HO7004, 001HO11389, 200HO03453
+
+	# Queueing up the alignemnt of these 6 bams again after transferring the arsucdv14 bams again from AGIL to ceres
+	perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_pipeline/alignBamReadsToNewAssemSlurm.pl -b iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2 -t iwf_prioritized_bulls_arsucdv14_bams/aligns.repeat.tab -f ARSUCD1.2.current_ref.fa -p msn -m true
 	 
+	# Calculating some stats 
 	perl /beegfs/project/rumen_longread_metagenome_assembly/binaries/perl_toolchain/sequence_data_scripts/getBamStats.pl -n new.bamlist -o new.bam.stats
+	
 	
 	cat new.bamlist | xargs -I {} sbatch indel_realign_markdups_kb.sh {} ARSUCD1.2.current_ref.fa
 
@@ -67,12 +72,22 @@ Markduplicates and INDEL realign:
 	# some dedup.realn.bam files in aligns_v1.2 folder are truncated for some reason
 	011HO10331, 011HO11231, 014HO05680
 	
+	# Doing indel realignment for these 3 bams again
+	 sbatch indel_realign.sh /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/011HO10331/011HO10331.sorted.merged.bam.dedup.bam ARSUCD1.2.current_ref.fa /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/011HO10331/011HO10331.sorted.merged.bam.intervals -partition msn
+
+	 sbatch indel_realign.sh /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/011HO11231/011HO11231.sorted.merged.bam.dedup.bam ARSUCD1.2.current_ref.fa /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/011HO11231/011HO11231.sorted.merged.bam.intervals -partition msn
+
+	 sbatch indel_realign.sh /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/014HO05680/014HO05680.sorted.merged.bam.dedup.bam ARSUCD1.2.current_ref.fa /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/CDDR/iwf_prioritized_bulls_arsucdv14_bams/aligns_v1.2/014HO05680/014HO05680.sorted.merged.bam.intervals -partition msn
+
+	INDEL realignment complete! Hopefully this time we get no truncated verisons...Will check these after the other 6 bams are ready...
+	
 	# Let's see how many bams are under 5X coverage
 	perl -lane 'if($F[4] < 6){print $_;}' < new.dedup.realn.bam.stats | wc -l
 	9
 	# Not too many. Now let's check high deviation from the mapping percentages
 	perl -lane 'if($F[5] == 0){next;} if($F[2]/$F[1] < 0.97){print $_;}' < new.dedup.realn.bam.stats | wc -l
 	4
+	
 	
 	# So I will drop all bams under 5X coverage and the < 97% mapping rate bams
 	perl -lane 'if($F[5] == 0){next;} if($F[4] > 6 & $F[2]/$F[1] > 0.97){print $F[0];}' < new.dedup.realn.bam.stats > dedup.realn.filtered.final.bam.list
@@ -90,7 +105,7 @@ Running GATK BQSR for the above deduplicated and indel realigned bam...
 
 Ok looks like it needs a known sites file, lets use bovineHD SNPs called by SAMtools using the arsucdv14 coordinates and lifted over to arsucdv1.2 assembly
 
-Ok now it throws another error: the input bam file needs PL taggs filled in by GATK... 
+Ok now it throws another error: the input bam file needs PL tags filled in by GATK... 
 
 
 ### Variant calling using SAMtools ###

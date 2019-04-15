@@ -492,10 +492,10 @@ ARS\_PIRBRIGHT\_5\_99190989\_T|-0.118815193
 	library(data.table)
 	soi<-scan("2round.snpids", what="character")
 	soi1<-c("FID","IID","PAT","MAT","SEX","PHENOTYPE",soi)
-	df<-fread("merge1_coded.raw", sep=" ", header=T, stringsAsFactors=F, select=soi1)
+	df<-fread("merge1_coded_plink2.raw", sep="\t", header=T, stringsAsFactors=F, select=soi1)
 	dfmatrix<-df[,6:ncol(df)]
 	df1<-lapply(dfmatrix,factor) 	
-	df2<-df1[ ,c("PHENOTYPE","ARS_PIRBRIGHT_18_62766196_G","ARS_PIRBRIGHT_18_62766196_G","ARS_PIRBRIGHT_5_99190989_T")]
+	df2<-df1[ ,c("PHENOTYPE","ARS_PIRBRIGHT_18_63141688_G","ARS_PIRBRIGHT_18_62766196_A","ARS_PIRBRIGHT_5_99190989_A")]
 
 
 	# ARS_PIRBRIGHT_18_62766196_G
@@ -635,6 +635,49 @@ ARS\_PIRBRIGHT\_5\_99190989\_T|-0.118815193
 
 
 
+
+The above are the manual calculations. Now lets do more using plink for all the phenoGrps...
+
+### Association analysis of significant SNPs ###
+
+*working directory: /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/plink_assoc*
+
+A basic allelic substitution test to determine association between the significant SNPs and the bTB phenotype:
+
+	module load plink/1.9
+	plink --bfile /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno1 --1 --cow --assoc counts --ci 0.95 --out pheno1 --snps BovineHD0700028028, ARS_PIRBRIGHT_18_62766196, ARS_PIRBRIGHT_18_63141688, ARS_PIRBRIGHT_5_99190989
+
+Similarly, for all the phenoGrps...
+
+
+
+Performing association analysis using other models like the dominance and recessive models...
+
+*working directory: /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/plink_model*
+	
+	plink --bfile /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno1 --1 --cow --model --out pheno1 
+
+
+Calculate MAF and HWE for cases and controls
+
+*working directory: /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/gmmat/hwe*
+	
+	plink --bfile /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno1 --1 --cow --freq case-control --hardy midp --out pheno1
+	
+Calculate the MAF in the whole population without considering the cases/controls
+	
+	plink --bfile /beegfs/project/rumen_longread_metagenome_assembly/kiranmayee/IGC/prelim_gwas/round2/data_files/pheno1 --1 --cow --freq --out pheno1
+
+
+
+I realized that I misunderstood the phenoGrp3 described in Raphaka et al paper after reading the Banos et al paper.
+
+PhenoGrp3 should contain the false negative samples of the skin test, means animals which are non-reactors for the skin test (N) and are inconclusive because they have visible lesions upon postmortem examination.   
+There are 6 such samples in the controls which I have included in the current analysis.
+
+These are the 6 samples which I have removed in the controls group of phenoGrp4 which I thought were NULL samples.
+
+Now all the discrepancies are hopefully solved which are in my control...  
 
 
 

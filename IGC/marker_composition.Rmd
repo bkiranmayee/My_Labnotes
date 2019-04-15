@@ -1,0 +1,50 @@
+---
+title: "Marker composition summary"
+output:
+  html_document
+---
+
+### Notes on loading the marker composition data to get brief summary statistics and enable preliminary visualization
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+
+snp.seq <- read.delim("~/IGC_Project/snp.seq.comp")
+df<-snp.seq[,c(1,3,5,7,8,10,12)]
+colnames(df)<-c("SNP_ID","percent_GC.b","percent_N.b","percent_IUPAC.b","percent_GC.a","percent_N.a","percent_IUPAC.a")
+mdf<-melt(df,id="SNP_ID")
+mdf$grp1 <- factor(gsub("\\..*$", "", mdf$variable))
+mdf$grp2 <- factor(gsub(".*\\.", "", mdf$variable))
+theme_update(plot.title = element_text(hjust = 0.5))
+p <- ggplot(data = mdf, aes(x=value)) + geom_density(aes(fill=grp2), alpha = 0.2)
+## save the plot
+#pdf("marker_composition.pdf")
+p + facet_wrap( ~ grp1, scales="free") + scale_fill_discrete(name="Seq (150bps)", labels=c("Downstream", "Upstream")) + theme(legend.position="top") + ggtitle("Marker Composition")
+#dev.off()
+```
+
+
+```{r}
+summary(df)
+```
+
+### Now load the marker quality data
+
+```{r}
+library(purrr)
+library(tidyr)
+snp_qual <- read.delim("~/IGC_Project/snp_qual", header=TRUE)
+colnames(snp_qual)<-c("SNP_ID","MAF","VCF_QUAL","5MQ","3MQ")
+
+# save the plot as pdf
+#pdf("marker_qual.pdf")
+snp_qual %>% keep(is.numeric) %>% gather() %>% ggplot(aes(value)) + facet_wrap(~ key, scales = "free") + geom_density() +ggtitle("Marker composition : Quality")
+#dev.off()
+```
+
+```{r}
+summary(snp_qual)
+```

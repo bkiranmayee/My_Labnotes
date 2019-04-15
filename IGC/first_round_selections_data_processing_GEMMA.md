@@ -210,7 +210,7 @@ The 3 pheno groups are manually made in excel spreadsheet NI_samples_forJHDB rec
  
 - Pheno2: (VL+P)+(NVL+P) (1083 cases, 460 controls)
 
-- Pheno3: (VL+P)+(NVL+P)+2.6% I+0.1% N (I : inconclusive in sv_res, N in st_res: negative reactors for skin test) (1115 cases,456 controls)
+- Pheno3: (VL+P)+(NVL+P)+(I+N) (I : inconclusive in sv_res, N in st_res: negative reactors for skin test) (1117 cases,460 controls)
 
 
 Its easy to prepare all three groups using plink then the phenotype coding can be changed in R
@@ -238,6 +238,8 @@ Its easy to prepare all three groups using plink then the phenotype coding can b
     write.table(merge,"merge1.fam",sep=" ", col.names=F, row.names=F, quote=F)
 
 Similar steps were followed for all the 3 phenotype groups.
+
+**Additionally: the non-reactor inconclusive samples were recoded as cases manually by changing the pheno3.fam file (control 0 -> case 1) **
 
 **Preparing Covariate files for each group using R**
 

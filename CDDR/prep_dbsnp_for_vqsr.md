@@ -159,3 +159,58 @@ Now do the overlap analysis with other datasets such as 1KBulls, bovineHD and th
     
 
 Now subsetting......
+
+	module load bcftools samtools htslib
+	# Fill in MAF and HWE tags and tabix using bcftools and tabix
+	bcftools plugin fill-tags /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_v1.2/filtration/f2.vcf.gz -O z -o f2.tagged.vcf.gz -- -t MAF,HWE
+	tabix -p vcf f2.tagged.vcf.gz
+	#Subset high quality 1000 bulls run 5 data set	
+	bcftools view -i 'QUAL>=999' -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/bed/group_2_4.txt -O z -o 1kbull_sites_q999.vcf.gz f2.tagged.vcf.gz
+	
+	#Subset high quality Holstein specific 1000 bulls dataset
+	bcftools view -i 'QUAL>=999' -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/bed/group_1_2_4.txt -O z -o 1kbull_Hol_sites_q999.vcf.gz f2.tagged.vcf.gz
+	#Subset high quality Holstein specific ARS sites
+	bcftools view -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/bed/group_1_2.txt -O z -o Hol_filtered.vcf.gz f2.tagged.vcf.gz
+	# Subset dbSNP sites
+	bcftools view -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/bed/group_5.txt -O z -o dbSNP.vcf.gz /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/resources/dbsnp_filtered_ARS-UCDv1.2_selected_uniq_snps.vcf.gz
+	# Subset bovineHD sites
+	bcftools view -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/bovineHDmapped -O z -o bovineHD.vcf.gz f2.tagged.vcf.gz
+	
+	tabix -p vcf bovineHD.vcf.gz
+	tabix -p vcf 1kbull_sites_q999.vcf.gz
+	tabix -p vcf 1kbull_Hol_sites_q999.vcf.gz
+	tabix -p vcf Hol_filtered.vcf.gz
+	tabix -p vcf dbSNP.vcf.gz
+	
+	gunzip -c 1kbull_sites_q999.vcf.gz | grep -v '#' | wc -l
+	3583444
+	gunzip -c 1kbull_Hol_sites_q999.vcf.gz | grep -v '#' | wc -l
+	332403
+	gunzip -c Hol_filtered.vcf.gz | grep -v '#' | wc -l
+	248793
+	gunzip -c dbSNP.vcf.gz | grep -v '#' | wc -l
+	3180858
+	gunzip -c bovineHD.vcf.gz | grep -v '#' | wc -l
+	584638
+	
+	gunzip -c 1kbull_sites_q999.vcf.gz | perl ~/perl_toolchain/bed_cnv_fig_table_pipeline/tabFileColumnCounter.pl -f stdin -c 0 -o 1kbull_v_per_chr -e '#'
+	sort -k1,1 -V -s 1kbull_v_per_chr > 1kbull_sorted.v_per_chr
+	
+	gunzip -c 1kbull_Hol_sites_q999.vcf.gz | perl ~/perl_toolchain/bed_cnv_fig_table_pipeline/tabFileColumnCounter.pl -f stdin -c 0 -o 1kbull_hol_v_per_chr -e '#'
+	sort -k1,1 -V -s 1kbull_hol_v_per_chr > 1kbull_hol_sorted.v_per_chr
+	
+	gunzip -c Hol_filtered.vcf.gz | perl ~/perl_toolchain/bed_cnv_fig_table_pipeline/tabFileColumnCounter.pl -f stdin -c 0 -o filtered_v_per_chr -e '#'
+	sort -k1,1 -V -s filtered_v_per_chr > filtered_sorted.v_per_chr
+	
+	gunzip -c dbSNP.vcf.gz | perl ~/perl_toolchain/bed_cnv_fig_table_pipeline/tabFileColumnCounter.pl -f stdin -c 0 -o dbsnp_v_per_chr -e '#'
+	sort -k1,1 -V -s dbsnp_v_per_chr > dbsnp_sorted.v_per_chr
+
+	gunzip -c bovineHD.vcf.gz | perl ~/perl_toolchain/bed_cnv_fig_table_pipeline/tabFileColumnCounter.pl -f stdin -c 0 -o bovineHD_v_per_chr -e '#'
+	sort -k1,1 -V -s bovineHD_v_per_chr > bovineHD_sorted.v_per_chr
+
+
+The bovineHD sites that I selected is based on just the lifted over coordinates bed file...
+
+So, I subsetted the bovineHD sites that match both the ref and alt allele as follows:
+ 
+	bcftools view -R /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_umd3/annotated/venn/ARS-UCDv1.2/overlapped_bovineHD_bed.txt -O z -o bovineHD2.vcf.gz f2.tagged.vcf.gz 

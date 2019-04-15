@@ -3,8 +3,9 @@ VQSR trials results analysis
 
 There are currently 2 models under study:
 
-- model1: Training sets used => bovineHD, 1000bulls, dbSNP
-- model2: 					 => model1 + high filtered ARS custom dataset				
+- model1: Training sets used => bovineHD, 1000bulls, dbSNP (/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_v1.2/filtration/gatk/modelling/run1/recalibrated_tagged.1.2.vcf.gz)
+
+- model2: 					 => model1 + high filtered ARS custom dataset	(/mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_v1.2/filtration/gatk/modelling/run3/recalibrated_tagged.3.2.vcf.gz)			
 
 The input data set is calibrated using both the models and I need to analyze the results...
 
@@ -598,10 +599,12 @@ Now running the script to get the count...
 
 	sh counts_per_interval.sh /mnt/nfs/nfs1/derek.bickhart/CDDR-Project/vcfs/condensed_vcfs/liftover_to_v1.2/filtration/gatk/modelling/run3/recalibrated_pass.3.2.vcf.gz model2
 
-Still running...
+I should make a box plot with the binned counts... 
 
 **Are there any functional difference between the passed sites of both the models?**
 
 Lets annotate the passed sites vcf files of each model using the custom ARSUCD1.2 SnpEff annotation database and check the stats...
+
+
 
 

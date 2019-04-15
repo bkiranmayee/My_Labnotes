@@ -1,7 +1,7 @@
 Labnotes on VQSR trails
 =======================
 
-All datasets used are the new assembly coordinates lifted 
+All datasets used are the new assembly coordinates lifted over from ARSUCDv14 system 
 
 
 
