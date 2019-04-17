@@ -1,0 +1,166 @@
+---
+title: "Semisupervised_learning"
+author: "Kiranmayee Bakshy"
+date: "July 26, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+## This document records all the trials for selecting the markers for a second round of genotyping.
+
+First round of trials includes marker composition data of the 36bps upstream and downstream of the SNP along with the marker QUAL metrics as variables for fitting the model
+
+#### The machine learning technique used here is called semisupervised learning
+
+* In this technique we use clustering on all the markers and then label the training set markers to identify which cluster the unlabeled markers belong to.
+
+* The data was first prepared using the custom perl script to calculate the marker composition data.
+
+* Training set used here is the 67 markers that were selected in the previous round of marker selection.
+
+Check the pairwise parameter plots for the training dataset to observe any pattern for clustering 
+
+```{r}
+getwd()
+load("cluster_analyses.RData")
+library(ggplot2)
+library(tidyr)
+library(cluster)
+library(factoextra)
+
+train1<-train
+train1[,2:11]<-scale(train[,2:11])
+ggplot(train1, aes(percent_GC.b, Minor.Allele.Freq, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, percent_GC.a, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, X5.MapQ, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, X3.MapQ, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, VCF_QUAL, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, percent_IUPAC.b, color = train1$class)) + geom_point()
+ggplot(train1, aes(percent_GC.b, percent_N.b, color = train1$class)) + geom_point()
+ggplot(train1, aes(X5.MapQ, X3.MapQ, color = train1$class)) + geom_point()
+ggplot(train1, aes(X5.MapQ, Minor.Allele.Freq, color = train1$class)) + geom_point()
+ggplot(train1, aes(Minor.Allele.Freq, X3.MapQ, color = train1$class)) + geom_point()
+```
+
+Check the pairwise parameter plots for the whole dataset to observe any pattern for clustering 
+
+```{r}
+data[,2:11]<-scale(data[,2:11])
+ggplot(data, aes(percent_GC.b, Minor.Allele.Freq, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, percent_GC.a, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, X5.MapQ, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, X3.MapQ, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, VCF_QUAL, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, percent_IUPAC.b, color = data$class)) + geom_point()
+ggplot(data, aes(percent_GC.b, percent_N.b, color = data$class)) + geom_point()
+ggplot(data, aes(X5.MapQ, X3.MapQ, color = data$class)) + geom_point()
+ggplot(data, aes(X5.MapQ, Minor.Allele.Freq, color = data$class)) + geom_point()
+ggplot(data, aes(Minor.Allele.Freq, X3.MapQ, color = data$class)) + geom_point()
+```
+
+
+Looks like there is no pattern...between any pairs of parameters for clustering.
+
+
+
+### Cluster 1: using all variables
+
+```{r}
+getwd()
+library(ggplot2)
+set.seed(12)
+dataCluster1<-kmeans(train1[, 2:11], 2, nstart=25)
+dataCluster1
+dataCluster1$cluster<-as.factor(dataCluster1$cluster)
+#fviz_cluster(dataCluster1, data = data[,2:11])
+#ggplot(train1, aes(percent_GC.b, Minor.Allele.Freq, color = dataCluster1$cluster))+ geom_point(size=3)+ geom_point(data=cen,size=5)
+plot(train1[,2:11], col=dataCluster1$cluster)
+points(dataCluster1$centers, col = 1:2, pch = 8, cex=1)
+```
+
+### Cluster 2: using only MAF and GC content:
+
+```{r}
+getwd()
+set.seed(12)
+dataCluster2<-kmeans(train1[, c(2,5,8)], 2, nstart=25)
+dataCluster2
+dataCluster2$cluster<-as.factor(dataCluster2$cluster)
+#ggplot(train1, aes(percent_GC.b, Minor.Allele.Freq, color = dataCluster2$cluster)) + geom_point()
+plot(train1[,c(2,5,8)], col=dataCluster2$cluster)
+points(dataCluster2$centers, col = 1:2, pch = 8, cex=1)
+```
+
+I think it is better to do a PCA to decide on what variables are important in clustering.
+
+```{r}
+log.train<-train
+log.train[,2:11]<-log(train[,2:11]+1)
+train.class<-train[,12]
+
+tr.pca<- prcomp(log.train[,2:11], center=T, scale=T)
+fviz_eig(tr.pca)
+
+```
+
+The screeplot suggests that the first 4 PCs explain around 65% of the variance.
+
+```{r}
+tr.ind <- get_pca_ind(tr.pca)
+
+
+fviz_pca_ind(tr.pca, 
+             axes=c(1,2),
+             mean.point=T,
+             col.ind = "cos2", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+
+fviz_pca_var(trg.pca,
+             axes=c(1,2),
+             mean.point=T,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+The PCA plot for variables suggests that the percent_GC.a and percent_GC.b are positively correlated to each other but are negatively correlated to rest of the variables.
+
+We can use percent_GC either upstream or downstream, MQ either 5' or 3' and MAF as variables in clustering the markers.
+
+
+### Cluster 3: using only GC content, MAF and 5'MQ:
+
+```{r}
+getwd()
+set.seed(12)
+dataCluster3<-kmeans(train1[, c(5,8,10)], 2, nstart=25)
+dataCluster3
+dataCluster3$cluster<-as.factor(dataCluster3$cluster)
+#ggplot(train1, aes(percent_GC.b, Minor.Allele.Freq, color = dataCluster2$cluster)) + geom_point()
+plot(train1[,c(5,8,10)], col=dataCluster2$cluster)
+points(dataCluster2$centers, col = 1:2, pch = 8, cex=1)
+```
+
+### Cluster 4: using only MAF and GC content:
+
+```{r}
+getwd()
+set.seed(12)
+dataCluster4<-kmeans(train1[, c(5,8)], 2, nstart=25)
+dataCluster4
+dataCluster4$cluster<-as.factor(dataCluster4$cluster)
+plot(train1[,c(5,8)], col=dataCluster4$cluster)
+points(dataCluster4$centers, col = 1:2, pch = 8, cex=1)
+ggplot(train1, aes(percent_GC.a, Minor.Allele.Freq, color = dataCluster4$cluster)) + geom_point()
+ggplot(train1, aes(percent_GC.a, Minor.Allele.Freq, color = train1$class)) + geom_point()
+```
+
+
+The clustering algorithm used in the current analyses could not classify the markers from the training dataset correctly based on the available variables.
+
+Clustering might not be a good way to select for markers using the variables we have at hand.
+

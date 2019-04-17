@@ -1,0 +1,115 @@
+---
+title: "GLM_fitting"
+author: "Kiranmayee Bakshy"
+date: "July 26, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+
+## This document records all the trials for selecting the markers for a second round of genotyping.
+
+### First round of trials includes marker composition data of the 36bps upstream and downstream of the SNP along with the marker QUAL metrics as variables for fitting the model
+
+#### The machine learning technique used here is simple logistic regression using the function glm() from the R base package
+
+* The data was first prepared using the custom perl script to calculate the marker composition data.
+
+* Training set used here is the 67 markers that were selected in the previous round of marker selection.
+
+First make a subset of the training data
+```{r}
+getwd()
+load("glm.analyses.RData")
+set.seed(12)
+tr<-train[sample(nrow(tr), 40),]
+test<-train[!(train$SNP_ID %in% tr$SNP_ID),]
+
+summary(tr)
+summary(test)
+```
+
+Model 1. using all the variables:
+```{r}
+ fit.all.glm<-glm(class ~ X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, family=binomial(link='logit'),data=tr)
+
+summary(fit.all.glm)
+```
+
+
+Model 2. using only upstream marker composition data and QUAL data
+```{r}
+ fit.up.glm<-glm(class ~ X5.MapQ+Minor.Allele.Freq+percent_GC.b+X3.MapQ+percent_IUPAC.b+VCF_QUAL , family=binomial(link='logit'),data=tr)
+
+summary(fit.up.glm)
+
+```
+
+Model 3. using only downstream marker composition data and QUAL data
+```{r}
+ fit.down.glm<-glm(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.a+X3.MapQ+percent_N.a+percent_IUPAC.a+VCF_QUAL, family=binomial(link='logit'),data=tr)
+
+summary(fit.down.glm)
+```
+
+Model 4. using only QUAL data
+```{r}
+ fit.qual.glm<-glm(class ~X5.MapQ+Minor.Allele.Freq+X3.MapQ+VCF_QUAL, family=binomial(link='logit'),data=tr)
+
+summary(fit.qual.glm)
+```
+
+None of the parameters seems to be statistically significant as suggested by the p-values of the variables used in each model.
+
+Anyway, run ANOVA on the model to analyze the table of deviance.
+
+```{r}
+anova(fit.all.glm, test="Chisq")
+anova(fit.up.glm, test="Chisq")
+anova(fit.down.glm, test="Chisq")
+anova(fit.qual.glm, test="Chisq")
+```
+
+### Assessing the predictive ability of the models
+
+```{r}
+all_glm_fitted<-predict(fit.all.glm,newdata=test)
+
+test$prob<-predict(fit.all.glm, test, type="response")
+ggplot(test, aes(percent_GC.a, prob, color=factor(), group=rank)) +
+  geom_line()
+
+all_glm_fitted<-ifelse(all_glm_fitted > 0.5, 1, 0)
+all_glm_err<- mean(all_glm_fitted != test$class)
+print(paste('Accuracy',1-all_glm_err))
+```
+
+Ok, I don't think this method is working at all, given the data: this analyses lacks power to get any significant results.
+
+But just to get a complete picture finish these analyses
+
+```{r}
+all_glm_fitted<-predict(fit.up.glm,newdata=test)
+all_glm_fitted<-ifelse(all_glm_fitted > 0.5, 1, 0)
+all_glm_err<- mean(all_glm_fitted != test$class)
+print(paste('Accuracy',1-all_glm_err))
+```
+
+```{r}
+all_glm_fitted<-predict(fit.down.glm,newdata=test)
+all_glm_fitted<-ifelse(all_glm_fitted > 0.5, 1, 0)
+all_glm_err<- mean(all_glm_fitted != test$class)
+print(paste('Accuracy',1-all_glm_err))
+```
+
+```{r}
+all_glm_fitted<-predict(fit.qual.glm,newdata=test)
+all_glm_fitted<-ifelse(all_glm_fitted > 0.5, 1, 0)
+all_glm_err<- mean(all_glm_fitted != test$class)
+print(paste('Accuracy',1-all_glm_err))
+```
+
+OK, its time to close this kind of analyses and move on to different method of machine learning called decision trees...
+
+

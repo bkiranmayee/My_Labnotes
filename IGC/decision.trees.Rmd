@@ -1,0 +1,287 @@
+---
+title: "Recursive_partitioning_fitting"
+author: "Kiranmayee Bakshy"
+date: "July 31, 2018"
+output:
+  word_document: default
+---
+
+
+## This document records all the trials for selecting the markers for a second round of genotyping.
+
+First round of trials includes marker composition data of the 36bps upstream and downstream of the SNP along with the marker QUAL metrics as variables for fitting the model
+
+#### The machine learning technique used here is decision trees using the function rpart() from the rpart package
+
+* The data was first prepared using the custom perl script to calculate the marker composition data.
+
+* Training set used here is the 67 markers that were selected in the previous round of marker selection.
+
+First make a subset of the training data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+getwd()
+library(rpart)
+library(modelr)
+load("glm.analyses.RData")
+set.seed(12)
+tr<-train[sample(nrow(tr), 40),]
+test<-train[!(train$SNP_ID %in% tr$SNP_ID),]
+
+summary(tr)
+
+summary(test)
+```
+
+### Model 1: using all the variables
+```{r}
+fit.all.dt<-rpart(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr)
+#summary(fit.all.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.all.dt)
+text(fit.all.dt)
+```
+
+```{r}
+pre.all.dt<-predict(fit.all.dt, test, type="class")
+table(observed=test$class,predicted=pre.all.dt)
+
+```
+
+
+### Model 2: using only QUAL paramters as variables
+```{r}
+fit.qual.dt<-rpart(class ~X5.MapQ+X3.MapQ+VCF_QUAL, data=tr)
+#summary(fit.all.dt)
+pre.qual.dt<-predict(fit.qual.dt, test, type="class")
+table(observed=test$class,predicted=pre.qual.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2), xpd = NA) 
+plot(fit.qual.dt)
+text(fit.qual.dt)
+```
+
+
+###Model 3: using only marker composition as variables
+```{r}
+fit.comp.dt<-rpart(class ~percent_GC.b+percent_GC.a+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a, data=tr)
+#summary(fit.all.dt)
+
+pre.comp.dt<-predict(fit.comp.dt, test, type="class")
+table(observed=test$class,predicted=pre.comp.dt)
+
+pre.comp.dt<-predict(fit.comp.dt, tr, type="class")
+table(observed=tr$class,predicted=pre.comp.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.comp.dt)
+text(fit.comp.dt)
+```
+
+###Model 4: using only marker composition  and MAF as variables
+```{r}
+fit.comp.maf.dt<-rpart(class ~Minor.Allele.Freq+percent_GC.b+percent_GC.a+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a, data=tr)
+#summary(fit.all.dt)
+
+pre.comp.maf.dt<-predict(fit.comp.maf.dt, test, type="class")
+table(observed=test$class,predicted=pre.comp.maf.dt)
+
+pre.comp.maf.dt<-predict(fit.comp.maf.dt, tr, type="class")
+table(observed=tr$class,predicted=pre.comp.maf.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.comp.maf.dt)
+text(fit.comp.maf.dt)
+```
+
+
+###Model 5: using marker composition and QUAL as variables
+```{r}
+fit.comp.qual.dt<-rpart(class ~percent_GC.b+percent_GC.a+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+X5.MapQ+X3.MapQ+VCF_QUAL, data=tr)
+#summary(fit.all.dt)
+
+pre.comp.qual.dt<-predict(fit.comp.qual.dt, test, type="class")
+table(observed=test$class,predicted=pre.comp.qual.dt)
+
+pre.comp.qual.dt<-predict(fit.comp.qual.dt, tr, type="class")
+table(observed=tr$class,predicted=pre.comp.qual.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.comp.qual.dt)
+text(fit.comp.qual.dt)
+```
+
+
+###Model 6: using upstream marker composition and QUAL as variables
+```{r}
+fit.upcomp.qual.dt<-rpart(class ~percent_GC.b+percent_N.b+percent_IUPAC.b+X5.MapQ+X3.MapQ+VCF_QUAL, data=tr)
+#summary(fit.all.dt)
+
+pre.upcomp.qual.dt<-predict(fit.upcomp.qual.dt, test, type="class")
+table(observed=test$class,predicted=pre.upcomp.qual.dt)
+
+pre.upcomp.qual.dt<-predict(fit.upcomp.qual.dt, tr, type="class")
+table(observed=tr$class,predicted=pre.upcomp.qual.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.upcomp.qual.dt)
+text(fit.upcomp.qual.dt)
+```
+
+
+###Model 7: using downstream marker composition and QUAL as variables
+```{r}
+fit.dncomp.qual.dt<-rpart(class ~percent_GC.a+percent_N.a+percent_IUPAC.a+X5.MapQ+X3.MapQ+VCF_QUAL, data=tr)
+#summary(fit.all.dt)
+
+pre.dncomp.qual.dt<-predict(fit.dncomp.qual.dt, test, type="class")
+table(observed=test$class,predicted=pre.dncomp.qual.dt)
+
+pre.dncomp.qual.dt<-predict(fit.dncomp.qual.dt, tr, type="class")
+table(observed=tr$class,predicted=pre.dncomp.qual.dt)
+```
+
+```{r, echo=FALSE}
+par(mar=c(0,2,0,2)) 
+plot(fit.dncomp.qual.dt)
+text(fit.dncomp.qual.dt)
+```
+
+
+## Trying a different algorithm, Randomforests which is similar to desicion trees but selects a tree from among different trees:
+
+###Model 1. using all the variables
+```{r}
+library(randomForest)
+set.seed(12)
+##cross validation step to select number of features
+v.results<-rfcv(tr[,2:11], tr[,12], cv.fold=5)
+p<-with(v.results, plot(n.var, error.cv, log="x", type="o", lwd=2))
+
+v.results<-rfcv(tr[,2:11], tr[,12], cv.fold=10)
+p<-with(v.results, plot(n.var, error.cv, log="x", type="o", lwd=2))
+
+fit25<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=25, mtry=3)
+fit25
+fit50<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=50, mtry=3)
+fit50
+fit100<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=100, mtry=3)
+fit100
+fit200<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=200, mtry=3)
+
+fit1000<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=1000, mtry=3)
+fit1000
+fit2000<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=2000, mtry=3)
+fit2000
+fit200
+fit25.2<-randomForest(class ~X5.MapQ+Minor.Allele.Freq+percent_GC.b+percent_GC.a+X3.MapQ+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a+VCF_QUAL, data=tr, importance=T, ntree=25, mtry=2)
+
+pre.fit.50<-predict(fit50, test, type="class")
+table(Observed=test$class, Predicted=pre.fit.50)
+
+
+pre.fit.1000<-predict(fit1000, test, type="class")
+table(Observed=test$class, Predicted=pre.fit.1000)
+```
+
+Check the group wise importance...
+
+```{r}
+var.share <- function(rf.obj, members) {
+  count <- table(rf.obj$forest$bestvar)[-1]
+  names(count) <- names(rf.obj$forest$ncat)[c(1:6,8:10)]
+  share <- count[members] / sum(count[members])
+  return(share)
+}
+
+
+var<-c("percent_GC.b","percent_IUPAC.b","percent_GC.a","percent_N.a","percent_IUPAC.a","Minor.Allele.Freq","VCF_QUAL","X5.MapQ","X3.MapQ")
+
+var.share(fit1000,var)
+
+group.importance <- function(rf.obj, groups) {
+  var.imp <- as.matrix(sapply(groups, function(g) {
+    sum(importance(rf.obj, 2)[g, ]*var.share(rf.obj, g))
+  }))
+  colnames(var.imp) <- "MeanDecreaseGini"
+  return(var.imp)
+}
+
+grps1<-list(GC=c("percent_GC.b", "percent_GC.a"),
+           MAF=c("Minor.Allele.Freq"),
+           MQ=c("X5.MapQ", "X3.MapQ"),
+           IUPAC=c("percent_IUPAC.b", "percent_IUPAC.a"),
+           N=c("percent_N.a")
+           )
+
+grps2<-list(GC=c("percent_GC.b", "percent_GC.a"),
+           MAF=c("Minor.Allele.Freq"),
+           MQ=c("X5.MapQ", "X3.MapQ"),
+           IUPAC=c("percent_IUPAC.b", "percent_IUPAC.a"),
+           N=c("percent_N.a")
+           )
+
+group.importance(fit50, grps1)
+
+varImpPlot(fit1000, sort=T, main="Model: 1000 trees;3 variables to split")
+
+var.imp = data.frame(importance(fit1000,  
+                                 type=2))
+var.imp$Variables = row.names(var.imp)  
+print(var.imp[order(var.imp$MeanDecreaseGini,decreasing = T),])
+```
+
+### Model 2. using only marker composition and MAF
+```{r}
+library(randomForest)
+fit.comp.maf.rf<-randomForest(class ~Minor.Allele.Freq+percent_GC.b+percent_GC.a+percent_N.a+percent_N.b+percent_IUPAC.b+percent_IUPAC.a, importance=T, data=tr)
+
+pre.comp.maf.rf<-predict(fit.comp.maf.rf, test, type="class")
+table(Observed=test$class,Predicted=pre.comp.maf.rf)
+
+```
+
+Looks like the randomForest algorithm worked better than all others. 
+
+It is worth trying for a semi-supervised machine learning methods...
+
+The semi supervised learning trials were not very promising. 
+
+Based on the randomforest model 1: the following are the predictions for the remaining 177 markers
+
+```{r}
+newdata.predictions<-predict(fit1000, newdata)
+summary(newdata.predictions)
+newdata$predicted.class<-newdata.predictions
+```
+
+The top predictions can be selected manually by looking at the parameters such as MAF, %GC_content and 3'MQ.
+
+```{r}
+newdata$predicted.class<-ifelse(newdata$predicted.class=="f","fail","pass")
+train$class<-"already_selected"
+train$predicted.class<-train$class
+train$predicted.class<-train$class
+newdata_final<-merge(newdata,train,all=T)
+write.table(newdata_final,"Marker_predictions",row.names=F,quote=F,sep="\t")
+```
+
+ 
+
