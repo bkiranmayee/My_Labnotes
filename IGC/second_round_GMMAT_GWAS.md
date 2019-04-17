@@ -3,7 +3,7 @@ Labnotes on running GWAS for second round IGC markers using GMMAT
 
 Since GWAS using GEMMA package gave promising results, we are now skeptical and want to re-confirm because the GEMMA package uses linear mixed model (LMM) which is not suitable for association studies with binary phenotype. This is because the distribution of the binary phenotype is discrete (not continuous). 
 
-The GWAS results for the same datasets using a LMM implemented in GEMMA package can be found [here](https://github.com/bkiranmayee/My_Labnotes/blob/master/IGC/neogen_second_round_data_processing.md).
+The GWAS results for the same datasets using a LMM implemented in GEMMA package can be found [here](https://github.com/bkiranmayee/My_Labnotes/blob/master/IGC/second_round_GEMMA_gwas.md).
 
 We can use a generalized linear mixed model to fit the binary phenotype data using a logistic function that is more suitable for binary phenotype data. This can be implemented using GMMAT R package.
 

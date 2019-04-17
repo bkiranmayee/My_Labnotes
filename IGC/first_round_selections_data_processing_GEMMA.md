@@ -1,4 +1,4 @@
-## Prepare Neogen genotyping results file for analyses##
+## Prepare Neogen genotyping results file for analyses
 
 **1a) Convert the neogen genotype file to plink format** 
 
@@ -351,3 +351,5 @@ First load covariates and Q covariates files of all the samples (total no. of sa
     qq(gwasresults3$p_wald)
     dev.off()
 
+
+None of these marker selections have reached the suggestive significance threshold which suggests for one more round of marker selections and repetition of the analysis after genotyping... 
