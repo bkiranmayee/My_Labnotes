@@ -1,4 +1,4 @@
-#Construction of New bovine assembly (ARS-UCD.v.1.2) annotation database
+# Construction of New bovine assembly (ARS-UCD.v.1.2) annotation database #
 
 
 ## Building ANNOVAR database for the new bovine reference assembly
@@ -79,3 +79,4 @@ Meanwhile, I have to convert the NKLS02 chromosome codes in the lifted over vcf 
 	# also change the snp ids
 	 bcftools annotate -I 'bakshy_%CHROM\_%POS\_%REF\_%FIRST_ALT' combined.ncbi.vcf.gz |  bgzip  > combined.ncbi.id.vcf.gz
     
+
